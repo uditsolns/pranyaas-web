@@ -22,8 +22,8 @@ import { canEdit } from "@/lib/permissions";
 type PatientForm = Partial<Patient> & { name?: string; email?: string; phone?: string; password?: string };
 
 const emptyPatient: PatientForm = {
-  full_name: "", name: "", email: "", phone: "", password: "", dob: "", age: "", gender: "Male", blood_group: "A+",
-  primary_diagnosis: "", risk_category: "Low", address: "", landmark: "",
+  full_name: "", name: "", email: "", phone: "", password: "", dob: "", age: "", gender: "", blood_group: "",
+  primary_diagnosis: "", risk_category: "", address: "", landmark: "",
   aadhaar_no: "", pan_no: "", primary_language: "Hindi",
   secondary_diagnosis: "", allergies: "", current_medications: "",
   treating_doctor_name: "", preferred_hospital: "", past_surgeries: "",
@@ -209,8 +209,8 @@ export default function PatientsPage() {
             </div>
             <div className="space-y-2">
               <Label>Gender</Label>
-              <Select value={editingPatient?.gender || "Male"} onValueChange={v => updateField("gender", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingPatient?.gender || ""} onValueChange={v => updateField("gender", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Gender..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Male">Male</SelectItem>
                   <SelectItem value="Female">Female</SelectItem>
@@ -220,8 +220,8 @@ export default function PatientsPage() {
             </div>
             <div className="space-y-2">
               <Label>Blood Group</Label>
-              <Select value={editingPatient?.blood_group || "A+"} onValueChange={v => updateField("blood_group", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingPatient?.blood_group || ""} onValueChange={v => updateField("blood_group", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Blood Group..." /></SelectTrigger>
                 <SelectContent>
                   {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(bg => (
                     <SelectItem key={bg} value={bg}>{bg}</SelectItem>
@@ -295,8 +295,8 @@ export default function PatientsPage() {
             </div>
             <div className="space-y-2">
               <Label>Risk Category</Label>
-              <Select value={editingPatient?.risk_category || "Low"} onValueChange={v => updateField("risk_category", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingPatient?.risk_category || ""} onValueChange={v => updateField("risk_category", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Risk..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Low">Low</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>

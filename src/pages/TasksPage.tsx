@@ -21,7 +21,7 @@ import { canEdit } from "@/lib/permissions";
 
 const emptyTask: Partial<Task> = {
   title: "", description: "", patient_id: "", care_manager_id: "",
-  due_date: "", priority: "1", status: "Pending", remark: "",
+  due_date: "", priority: "", status: "", remark: "",
 };
 
 export default function TasksPage() {
@@ -180,11 +180,11 @@ export default function TasksPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2 sm:col-span-2">
               <Label>Title <span className="text-destructive">*</span></Label>
-              <Input value={editingTask?.title || ""} onChange={e => updateField("title", e.target.value)} />
+              <Input value={editingTask?.title || ""} onChange={e => updateField("title", e.target.value)} placeholder="Task Title" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Description</Label>
-              <Textarea value={editingTask?.description || ""} onChange={e => updateField("description", e.target.value)} rows={3} />
+              <Textarea value={editingTask?.description || ""} onChange={e => updateField("description", e.target.value)} rows={3} placeholder="Describe the task details..." />
             </div>
             <div className="space-y-2">
               <Label>Patient</Label>
@@ -206,29 +206,29 @@ export default function TasksPage() {
             </div>
             <div className="space-y-2">
               <Label>Priority</Label>
-              <Select value={editingTask?.priority || "1"} onValueChange={v => updateField("priority", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingTask?.priority || "3"} onValueChange={v => updateField("priority", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Priority..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1 - High</SelectItem>
-                  <SelectItem value="2">2 - Medium</SelectItem>
-                  <SelectItem value="3">3 - Low</SelectItem>
+                  <SelectItem value="1">High</SelectItem>
+                  <SelectItem value="2">Medium</SelectItem>
+                  <SelectItem value="3">Low</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
               <Select value={editingTask?.status || "pending"} onValueChange={v => updateField("status", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Remark</Label>
-              <Textarea value={editingTask?.remark || ""} onChange={e => updateField("remark", e.target.value)} rows={2} />
+              <Textarea value={editingTask?.remark || ""} onChange={e => updateField("remark", e.target.value)} rows={2} placeholder="Add any additional remarks..." />
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-6">

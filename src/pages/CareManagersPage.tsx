@@ -18,12 +18,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 
-const emptyCM: Partial<CareManager> & { phone?: string; email?: string; password?: string } = {
+type CMFormState = Partial<CareManager> & { phone?: string; email?: string; password?: string };
+
+const emptyCM: CMFormState = {
   name: "", phone: "", email: "", password: "",
-  qualification: "", assigned_zone: "", availability_type: "Full Time",
-  registration_number: "", languages_known: "", cpr_certified: "No",
+  qualification: "", assigned_zone: "", availability_type: "",
+  registration_number: "", languages_known: "", cpr_certified: "",
   aadhaar_no: "", pan_no: "", years_of_experience: "",
-  police_verification_status: "Pending", background_verification_status: "Pending",
+  police_verification_status: "", background_verification_status: "",
   supervisor_id: "", region: "",
 };
 
@@ -33,15 +35,15 @@ export default function CareManagersPage() {
   const { data: cms = [], isLoading } = useApiList<CareManager>("care-managers", "/care-managers");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
   const adminUsers = users.filter(u => String(u.role_id) === "1");
-  const createMutation = useApiCreate<CareManager>("care-managers", "/care-managers", "Care Manager");
-  const updateMutation = useApiUpdate<CareManager>("care-managers", "/care-managers", "Care Manager");
+  const createMutation = useApiCreate<any>("care-managers", "/care-managers", "Care Manager");
+  const updateMutation = useApiUpdate<any>("care-managers", "/care-managers", "Care Manager");
   const deleteMutation = useApiDelete("care-managers", "/care-managers", "Care Manager");
 
   const [search, setSearch] = useState("");
   const [filterAvailability, setFilterAvailability] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [editingCM, setEditingCM] = useState<Partial<CareManager> | null>(null);
+  const [editingCM, setEditingCM] = useState<CMFormState | null>(null);
   const [viewingCM, setViewingCM] = useState<CareManager | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
@@ -55,14 +57,31 @@ export default function CareManagersPage() {
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered, 9);
 
   const openCreate = () => { setEditingCM({ ...emptyCM }); setDialogOpen(true); };
-  const openEdit = (cm: CareManager) => { setEditingCM({ ...cm }); setDialogOpen(true); };
+  const openEdit = (cm: CareManager) => {
+    setEditingCM({
+      ...cm,
+      phone: cm.user?.phone || "",
+      email: cm.user?.email || ""
+    });
+    setDialogOpen(true);
+  };
 
   const handleSave = () => {
     if (!editingCM?.name?.trim()) return;
-    if (editingCM.id) {
-      updateMutation.mutate({ id: editingCM.id, data: editingCM }, { onSuccess: () => setDialogOpen(false) });
+    
+    // Deconstruct and clean up the object for the API payload
+    const { id, user, created_at, updated_at, ...cmData } = editingCM as any;
+    
+    // Ensure numeric fields are cast correctly
+    const sanitizedCM = {
+      ...cmData,
+      years_of_experience: editingCM.years_of_experience ? parseInt(String(editingCM.years_of_experience)) : 0
+    };
+
+    if (id) {
+      updateMutation.mutate({ id, data: sanitizedCM }, { onSuccess: () => setDialogOpen(false) });
     } else {
-      createMutation.mutate(editingCM, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate(sanitizedCM, { onSuccess: () => setDialogOpen(false) });
     }
   };
 
@@ -72,7 +91,7 @@ export default function CareManagersPage() {
     }
   };
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: keyof CMFormState, value: string) => {
     setEditingCM(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
@@ -183,20 +202,20 @@ export default function CareManagersPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
               <Label>Name <span className="text-destructive">*</span></Label>
-              <Input value={editingCM?.name || ""} onChange={e => updateField("name", e.target.value)} />
+              <Input value={editingCM?.name || ""} onChange={e => updateField("name", e.target.value)} placeholder="Full Name" />
             </div>
             <div className="space-y-2">
               <Label>Phone <span className="text-destructive">*</span></Label>
-              <Input value={(editingCM as any)?.phone || ""} onChange={e => updateField("phone", e.target.value)} placeholder="e.g. 9876543212" />
+              <Input value={editingCM?.phone || ""} onChange={e => updateField("phone", e.target.value)} placeholder="e.g. 9876543212" />
             </div>
             <div className="space-y-2">
               <Label>Email <span className="text-destructive">*</span></Label>
-              <Input type="email" value={(editingCM as any)?.email || ""} onChange={e => updateField("email", e.target.value)} placeholder="e.g. raj@gmail.com" />
+              <Input type="email" value={editingCM?.email || ""} onChange={e => updateField("email", e.target.value)} placeholder="e.g. raj@gmail.com" />
             </div>
             {!editingCM?.id && (
               <div className="space-y-2">
                 <Label>Password <span className="text-destructive">*</span></Label>
-                <Input type="password" value={(editingCM as any)?.password || ""} onChange={e => updateField("password", e.target.value)} />
+                <Input type="password" value={editingCM?.password || ""} onChange={e => updateField("password", e.target.value)} placeholder="Minimum 6 characters" />
               </div>
             )}
             <div className="space-y-2">
@@ -209,15 +228,21 @@ export default function CareManagersPage() {
             </div>
             <div className="space-y-2">
               <Label>Qualification</Label>
-              <Input value={editingCM?.qualification || ""} onChange={e => updateField("qualification", e.target.value)} />
+              <Input value={editingCM?.qualification || ""} onChange={e => updateField("qualification", e.target.value)} placeholder="e.g. B.Sc Nursing" />
             </div>
             <div className="space-y-2">
               <Label>Registration Number</Label>
-              <Input value={editingCM?.registration_number || ""} onChange={e => updateField("registration_number", e.target.value)} />
+              <Input value={editingCM?.registration_number || ""} onChange={e => updateField("registration_number", e.target.value)} placeholder="e.g. REG123456" />
             </div>
             <div className="space-y-2">
               <Label>Years of Experience</Label>
-              <Input value={editingCM?.years_of_experience || ""} onChange={e => updateField("years_of_experience", e.target.value)} />
+              <Input 
+                type="number" 
+                min="0"
+                value={editingCM?.years_of_experience || ""} 
+                onChange={e => updateField("years_of_experience", e.target.value)} 
+                placeholder="e.g. 5"
+              />
             </div>
             <div className="space-y-2">
               <Label>Languages Known</Label>
@@ -225,8 +250,8 @@ export default function CareManagersPage() {
             </div>
             <div className="space-y-2">
               <Label>CPR Certified</Label>
-              <Select value={editingCM?.cpr_certified || "No"} onValueChange={v => updateField("cpr_certified", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingCM?.cpr_certified || ""} onValueChange={v => updateField("cpr_certified", v)}>
+                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Yes">Yes</SelectItem>
                   <SelectItem value="No">No</SelectItem>
@@ -235,12 +260,12 @@ export default function CareManagersPage() {
             </div>
             <div className="space-y-2">
               <Label>Assigned Zone</Label>
-              <Input value={editingCM?.assigned_zone || ""} onChange={e => updateField("assigned_zone", e.target.value)} />
+              <Input value={editingCM?.assigned_zone || ""} onChange={e => updateField("assigned_zone", e.target.value)} placeholder="e.g. South Zone" />
             </div>
             <div className="space-y-2">
               <Label>Availability</Label>
-              <Select value={editingCM?.availability_type || "Full Time"} onValueChange={v => updateField("availability_type", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingCM?.availability_type || ""} onValueChange={v => updateField("availability_type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Availability..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Full Time">Full Time</SelectItem>
                   <SelectItem value="Part Time">Part Time</SelectItem>
@@ -249,8 +274,8 @@ export default function CareManagersPage() {
             </div>
             <div className="space-y-2">
               <Label>Police Verification</Label>
-              <Select value={editingCM?.police_verification_status || "Pending"} onValueChange={v => updateField("police_verification_status", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingCM?.police_verification_status || ""} onValueChange={v => updateField("police_verification_status", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Verified">Verified</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
@@ -259,8 +284,8 @@ export default function CareManagersPage() {
             </div>
             <div className="space-y-2">
               <Label>Background Verification</Label>
-              <Select value={editingCM?.background_verification_status || "Pending"} onValueChange={v => updateField("background_verification_status", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingCM?.background_verification_status || ""} onValueChange={v => updateField("background_verification_status", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Verified">Verified</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
@@ -278,7 +303,7 @@ export default function CareManagersPage() {
             </div>
             <div className="space-y-2">
               <Label>Region</Label>
-              <Input value={editingCM?.region || ""} onChange={e => updateField("region", e.target.value)} />
+              <Input value={editingCM?.region || ""} onChange={e => updateField("region", e.target.value)} placeholder="e.g. Indian" />
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-6">

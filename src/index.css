@@ -79,4 +79,17 @@
   .card-shadow-lg {
     box-shadow: 0 4px 12px 0 hsl(220 20% 16% / 0.06), 0 2px 4px -2px hsl(220 20% 16% / 0.04);
   }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
 }

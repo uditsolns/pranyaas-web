@@ -20,7 +20,7 @@ import { canEdit } from "@/lib/permissions";
 
 const emptyVendor: Partial<Vendor> = {
   vendor_name: "", mobile: "", email: "", address: "", company_name: "",
-  adhar_no: "", pan_no: "", type: "Ambulance", coverage_area: "",
+  adhar_no: "", pan_no: "", type: "", coverage_area: "",
   avg_response_time: "", availability_24_7: "", oxygen_support: "",
   ventilator_available: "", rate_card: "", agreement_status: "",
 };
@@ -52,10 +52,23 @@ export default function VendorsPage() {
 
   const handleSave = () => {
     if (!editingItem?.vendor_name?.trim()) return;
-    if (editingItem.id) {
-      updateMutation.mutate({ id: editingItem.id, data: editingItem }, { onSuccess: () => setDialogOpen(false) });
+    
+    // Deconstruct and clean up the object for the API payload
+    const { id, created_at, updated_at, ...vData } = editingItem as any;
+    
+    // Ensure numeric fields are cast correctly or nullified if empty
+    const sanitizedVendor = {
+      ...vData,
+      avg_response_time: editingItem.avg_response_time ? parseInt(String(editingItem.avg_response_time)) : 0,
+      availability_24_7: editingItem.availability_24_7 ? parseInt(String(editingItem.availability_24_7)) : 0,
+      oxygen_support: editingItem.oxygen_support ? parseInt(String(editingItem.oxygen_support)) : 0,
+      ventilator_available: editingItem.ventilator_available ? parseInt(String(editingItem.ventilator_available)) : 0,
+    };
+
+    if (id) {
+      updateMutation.mutate({ id, data: sanitizedVendor }, { onSuccess: () => setDialogOpen(false) });
     } else {
-      createMutation.mutate(editingItem, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate(sanitizedVendor, { onSuccess: () => setDialogOpen(false) });
     }
   };
 
@@ -159,11 +172,11 @@ export default function VendorsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
               <Label>Vendor Name <span className="text-destructive">*</span></Label>
-              <Input value={editingItem?.vendor_name || ""} onChange={e => updateField("vendor_name", e.target.value)} />
+              <Input value={editingItem?.vendor_name || ""} onChange={e => updateField("vendor_name", e.target.value)} placeholder="Full Name" />
             </div>
             <div className="space-y-2">
               <Label>Company Name</Label>
-              <Input value={editingItem?.company_name || ""} onChange={e => updateField("company_name", e.target.value)} />
+              <Input value={editingItem?.company_name || ""} onChange={e => updateField("company_name", e.target.value)} placeholder="Company Name" />
             </div>
             <div className="space-y-2">
               <Label>Mobile</Label>
@@ -171,16 +184,16 @@ export default function VendorsPage() {
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" value={editingItem?.email || ""} onChange={e => updateField("email", e.target.value)} />
+              <Input type="email" value={editingItem?.email || ""} onChange={e => updateField("email", e.target.value)} placeholder="e.g. vendor@gmail.com" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Address</Label>
-              <Input value={editingItem?.address || ""} onChange={e => updateField("address", e.target.value)} />
+              <Input value={editingItem?.address || ""} onChange={e => updateField("address", e.target.value)} placeholder="Full Address" />
             </div>
             <div className="space-y-2">
               <Label>Type</Label>
-              <Select value={editingItem?.type || "Ambulance"} onValueChange={v => updateField("type", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingItem?.type || ""} onValueChange={v => updateField("type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
                 <SelectContent>
                   {["Ambulance", "Pharmacy", "Lab", "Equipment", "Physiotherapy", "Other"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
@@ -188,39 +201,47 @@ export default function VendorsPage() {
             </div>
             <div className="space-y-2">
               <Label>Aadhaar No</Label>
-              <Input value={editingItem?.adhar_no || ""} onChange={e => updateField("adhar_no", e.target.value)} />
+              <Input value={editingItem?.adhar_no || ""} onChange={e => updateField("adhar_no", e.target.value)} placeholder="e.g. 123456789012" />
             </div>
             <div className="space-y-2">
               <Label>PAN No</Label>
-              <Input value={editingItem?.pan_no || ""} onChange={e => updateField("pan_no", e.target.value)} />
+              <Input value={editingItem?.pan_no || ""} onChange={e => updateField("pan_no", e.target.value)} placeholder="e.g. ABCDE1234F" />
             </div>
             <div className="space-y-2">
               <Label>Coverage Area</Label>
-              <Input value={editingItem?.coverage_area || ""} onChange={e => updateField("coverage_area", e.target.value)} />
+              <Input value={editingItem?.coverage_area || ""} onChange={e => updateField("coverage_area", e.target.value)} placeholder="e.g. Mumbai South" />
             </div>
             <div className="space-y-2">
               <Label>Avg Response Time</Label>
-              <Input value={editingItem?.avg_response_time || ""} onChange={e => updateField("avg_response_time", e.target.value)} placeholder="e.g. 15 min" />
+              <Input type="number" min="0" value={editingItem?.avg_response_time || ""} onChange={e => updateField("avg_response_time", e.target.value)} placeholder="e.g. 15" />
             </div>
             <div className="space-y-2">
               <Label>24/7 Availability</Label>
-              <Input value={editingItem?.availability_24_7 || ""} onChange={e => updateField("availability_24_7", e.target.value)} placeholder="e.g. 24" />
+              <Input type="number" min="0" value={editingItem?.availability_24_7 || ""} onChange={e => updateField("availability_24_7", e.target.value)} placeholder="e.g. 24" />
             </div>
             <div className="space-y-2">
               <Label>Oxygen Support</Label>
-              <Input value={editingItem?.oxygen_support || ""} onChange={e => updateField("oxygen_support", e.target.value)} />
+              <Input type="number" min="0" value={editingItem?.oxygen_support || ""} onChange={e => updateField("oxygen_support", e.target.value)} placeholder="e.g. 1" />
             </div>
             <div className="space-y-2">
               <Label>Ventilator Available</Label>
-              <Input value={editingItem?.ventilator_available || ""} onChange={e => updateField("ventilator_available", e.target.value)} />
+              <Input type="number" min="0" value={editingItem?.ventilator_available || ""} onChange={e => updateField("ventilator_available", e.target.value)} placeholder="e.g. 1" />
             </div>
             <div className="space-y-2">
               <Label>Rate Card</Label>
-              <Input value={editingItem?.rate_card || ""} onChange={e => updateField("rate_card", e.target.value)} />
+              <Input value={editingItem?.rate_card || ""} onChange={e => updateField("rate_card", e.target.value)} placeholder="Rate details" />
             </div>
             <div className="space-y-2">
               <Label>Agreement Status</Label>
-              <Input value={editingItem?.agreement_status || ""} onChange={e => updateField("agreement_status", e.target.value)} />
+              <Select value={editingItem?.agreement_status || ""} onValueChange={v => updateField("agreement_status", v)}>
+                <SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                  <SelectItem value="terminated">Terminated</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-6">

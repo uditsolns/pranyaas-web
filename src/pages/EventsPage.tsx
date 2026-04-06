@@ -24,7 +24,7 @@ import { toast } from "sonner";
 const emptyEvent: Partial<Event> = {
   event_name: "", event_date: "", event_time: "", location: "",
   description: "", banner_image: "", organizer_name: "",
-  organizer_phone: "", status: "active", meet_link: "",
+  organizer_phone: "", status: "", meet_link: "",
 };
 
 export default function EventsPage() {
@@ -159,7 +159,7 @@ export default function EventsPage() {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -246,7 +246,7 @@ export default function EventsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2 sm:col-span-2">
               <Label>Event Name <span className="text-destructive">*</span></Label>
-              <Input value={editingEvent?.event_name || ""} onChange={e => updateField("event_name", e.target.value)} />
+              <Input value={editingEvent?.event_name || ""} onChange={e => updateField("event_name", e.target.value)} placeholder="e.g. Annual Health Checkup" />
             </div>
             <div className="space-y-2">
               <Label>Event Date</Label>
@@ -258,11 +258,11 @@ export default function EventsPage() {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Location</Label>
-              <Input value={editingEvent?.location || ""} onChange={e => updateField("location", e.target.value)} />
+              <Input value={editingEvent?.location || ""} onChange={e => updateField("location", e.target.value)} placeholder="Full Address or Online Platform" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Description</Label>
-              <Textarea value={editingEvent?.description || ""} onChange={e => updateField("description", e.target.value)} rows={3} />
+              <Textarea value={editingEvent?.description || ""} onChange={e => updateField("description", e.target.value)} rows={3} placeholder="Provide a brief description of the event..." />
             </div>
 
             {/* Banner Image Upload */}
@@ -302,20 +302,20 @@ export default function EventsPage() {
 
             <div className="space-y-2">
               <Label>Organizer Name</Label>
-              <Input value={editingEvent?.organizer_name || ""} onChange={e => updateField("organizer_name", e.target.value)} />
+              <Input value={editingEvent?.organizer_name || ""} onChange={e => updateField("organizer_name", e.target.value)} placeholder="Name of Person/Org" />
             </div>
             <div className="space-y-2">
               <Label>Organizer Phone</Label>
-              <Input value={editingEvent?.organizer_phone || ""} onChange={e => updateField("organizer_phone", e.target.value)} />
+              <Input value={editingEvent?.organizer_phone || ""} onChange={e => updateField("organizer_phone", e.target.value)} placeholder="e.g. 9876543210" />
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
               <Select value={editingEvent?.status || "active"} onValueChange={v => updateField("status", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
                 </SelectContent>
               </Select>
             </div>

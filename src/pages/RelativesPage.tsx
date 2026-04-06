@@ -20,9 +20,9 @@ import { canEdit } from "@/lib/permissions";
 type RelativeForm = Partial<Relative> & { password?: string };
 
 const emptyRelative: RelativeForm = {
-  relative_name: "", patient_id: "", password: "", relationship: "", location_type: "India",
+  relative_name: "", patient_id: "", password: "", relationship: "", location_type: "",
   country: "India", phone_number: "", whatsapp_number: "", email: "",
-  aadhaar_no: "", pan_no: "", preferred_update_mode: "WhatsApp",
+  aadhaar_no: "", pan_no: "", preferred_update_mode: "",
   secondary_escalation_contact: "",
 };
 
@@ -170,8 +170,8 @@ export default function RelativesPage() {
             </div>
             <div className="space-y-2">
               <Label>Location</Label>
-              <Select value={editingItem?.location_type || "India"} onValueChange={v => updateField("location_type", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingItem?.location_type || ""} onValueChange={v => updateField("location_type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Location..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="India">India</SelectItem>
                   <SelectItem value="NRI">NRI</SelectItem>
@@ -184,8 +184,8 @@ export default function RelativesPage() {
             </div>
             <div className="space-y-2">
               <Label>Preferred Update Mode</Label>
-              <Select value={editingItem?.preferred_update_mode || "WhatsApp"} onValueChange={v => updateField("preferred_update_mode", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingItem?.preferred_update_mode || ""} onValueChange={v => updateField("preferred_update_mode", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Mode..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="WhatsApp">WhatsApp</SelectItem>
                   <SelectItem value="Email">Email</SelectItem>

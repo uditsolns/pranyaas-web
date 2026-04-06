@@ -20,7 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 
 const emptyVisit: Partial<CareVisit> = {
-  patient_id: "", care_manager_id: "", visit_type: "Home Visit", notes: "",
+  patient_id: "", care_manager_id: "", visit_type: "", notes: "",
   visit_time: "", due_date: "", status: "",
 };
 
@@ -196,8 +196,8 @@ export default function VisitsPage() {
             </div>
             <div className="space-y-2">
               <Label>Visit Type</Label>
-              <Select value={editingVisit?.visit_type || "Home Visit"} onValueChange={v => updateField("visit_type", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={editingVisit?.visit_type || ""} onValueChange={v => updateField("visit_type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Home Visit">Home Visit</SelectItem>
                   <SelectItem value="Clinic Visit">Clinic Visit</SelectItem>
