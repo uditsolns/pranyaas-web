@@ -47,12 +47,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return json as T;
 }
 
-export const STORAGE_BASE_URL = "https://uditsolutions.in/eldercare/public/";
+export const STORAGE_BASE_URL = "https://uditsolutions.in/eldercare/storage/app/public/events/";
 
 export function getStorageUrl(path: string | null): string | null {
   if (!path) return null;
   if (path.startsWith("http")) return path;
-  return `${STORAGE_BASE_URL}${path}`;
+  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
+  return `${STORAGE_BASE_URL}${cleanPath}`;
 }
 
 export const api = {
