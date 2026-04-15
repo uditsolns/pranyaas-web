@@ -38,7 +38,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     reports: "none",
     settings: "view",
     events: "none",
-    quotes: "view",
+    quotes: "none",
   },
   PATIENT: {
     dashboard: "view",
@@ -53,7 +53,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     reports: "none",
     settings: "view",
     events: "none",
-    quotes: "view",
+    quotes: "none",
   },
   PATIENT_RELATIVE: {
     dashboard: "view",
@@ -68,7 +68,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     reports: "none",
     settings: "view",
     events: "none",
-    quotes: "view",
+    quotes: "none",
   },
 };
 

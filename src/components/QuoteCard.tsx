@@ -69,7 +69,7 @@ export function QuoteCard({ title = "Quote of the Moment" }: QuoteCardProps) {
             </blockquote>
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span>{quote.said_by || "Unknown"}</span>
-              <span className="text-border">•</span>
+              <span className="text-border">&bull;</span>
               <span className="capitalize">{quote.type || "anytime"}</span>
             </div>
           </div>
