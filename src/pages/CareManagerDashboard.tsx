@@ -2,6 +2,7 @@ import { Users, Calendar, ClipboardList, AlertTriangle } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useApiGet, useApiList } from "@/hooks/useApi";
+import { QuoteCard } from "@/components/QuoteCard";
 import { CareVisit, Task, EmergencyAlert } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -56,6 +57,8 @@ export default function CareManagerDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <QuoteCard />
+
         <div className="bg-card rounded-xl p-5 card-shadow border border-border/50">
           <h3 className="text-sm font-semibold text-foreground mb-4">Recent Visits</h3>
           <div className="space-y-3">

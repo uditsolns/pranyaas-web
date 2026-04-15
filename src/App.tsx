@@ -19,6 +19,7 @@ import CareManagersPage from "./pages/CareManagersPage";
 import RelativesPage from "./pages/RelativesPage";
 import VendorsPage from "./pages/VendorsPage";
 import EventsPage from "./pages/EventsPage";
+import QuotesPage from "./pages/QuotesPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -77,6 +78,7 @@ const App = () => (
                 <Route path="/relatives" element={<RelativesPage />} />
                 <Route path="/vendors" element={<VendorsPage />} />
                 <Route path="/events" element={<EventsPage />} />
+                <Route path="/quotes" element={<QuotesPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFound />} />

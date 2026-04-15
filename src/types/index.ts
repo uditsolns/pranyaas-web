@@ -316,3 +316,12 @@ export interface Event {
   created_at: string;
   updated_at: string;
 }
+
+export interface Quote {
+  id: number;
+  quote: string;
+  type: string;
+  said_by: string;
+  created_at: string;
+  updated_at: string;
+}

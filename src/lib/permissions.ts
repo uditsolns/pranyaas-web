@@ -5,7 +5,7 @@ export type AccessLevel = "full" | "view" | "none";
 
 export type AppModule =
   | "dashboard" | "patients" | "relatives" | "care-managers" | "vendors"
-  | "tasks" | "visits" | "vitals" | "emergencies" | "reports" | "settings" | "events";
+  | "tasks" | "visits" | "vitals" | "emergencies" | "reports" | "settings" | "events" | "quotes";
 
 export type AppRole = "ADMIN" | "CARE_MANAGER" | "PATIENT" | "PATIENT_RELATIVE";
 
@@ -23,6 +23,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     reports: "full",
     settings: "full",
     events: "full",
+    quotes: "full",
   },
   CARE_MANAGER: {
     dashboard: "view",
@@ -37,6 +38,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     reports: "none",
     settings: "view",
     events: "none",
+    quotes: "view",
   },
   PATIENT: {
     dashboard: "view",
@@ -51,6 +53,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     reports: "none",
     settings: "view",
     events: "none",
+    quotes: "view",
   },
   PATIENT_RELATIVE: {
     dashboard: "view",
@@ -65,6 +68,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     reports: "none",
     settings: "view",
     events: "none",
+    quotes: "view",
   },
 };
 
@@ -95,6 +99,7 @@ const urlToModule: Record<string, AppModule> = {
   "/reports": "reports",
   "/settings": "settings",
   "/events": "events",
+  "/quotes": "quotes",
 };
 
 export function getModuleForUrl(url: string): AppModule | undefined {

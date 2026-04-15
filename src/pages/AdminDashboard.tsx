@@ -2,6 +2,7 @@ import { Users, UserCog, ClipboardList, Calendar, AlertTriangle } from "lucide-r
 import { StatCard } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useApiGet, useApiList } from "@/hooks/useApi";
+import { QuoteCard } from "@/components/QuoteCard";
 import { CareVisit, EmergencyAlert } from "@/types";
 import { patientGrowthData, visitActivityData, emergencyTrendsData } from "@/data/mock";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -90,6 +91,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <QuoteCard />
+
         <div className="bg-card rounded-xl p-5 card-shadow border border-border/50">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Recent Visits</h3>
