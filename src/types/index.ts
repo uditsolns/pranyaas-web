@@ -187,6 +187,8 @@ export interface Vendor {
   mobile: string;
   email: string;
   address: string;
+  latitude?: string;
+  longitude?: string;
   company_name: string;
   vendor_photo: string | null;
   adhar_no: string;

@@ -20,6 +20,7 @@ import { canEdit } from "@/lib/permissions";
 
 const emptyVendor: Partial<Vendor> = {
   vendor_name: "", mobile: "", email: "", address: "", company_name: "",
+  latitude: "", longitude: "",
   adhar_no: "", pan_no: "", type: "", coverage_area: "",
   avg_response_time: "", availability_24_7: "", oxygen_support: "",
   ventilator_available: "", rate_card: "", agreement_status: "",
@@ -39,6 +40,7 @@ export default function VendorsPage() {
   const [editingItem, setEditingItem] = useState<Partial<Vendor> | null>(null);
   const [viewingItem, setViewingItem] = useState<Vendor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const filtered = vendors.filter(v =>
     (v.vendor_name || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -150,6 +152,7 @@ export default function VendorsPage() {
                 <div><p className="text-xs text-muted-foreground">Mobile</p><p className="text-sm font-medium">{viewingItem.mobile}</p></div>
                 <div><p className="text-xs text-muted-foreground">Email</p><p className="text-sm font-medium">{viewingItem.email || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Address</p><p className="text-sm font-medium">{viewingItem.address || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Location</p><p className="text-sm font-medium">{viewingItem.latitude && viewingItem.longitude ? `${viewingItem.latitude}, ${viewingItem.longitude}` : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Coverage</p><p className="text-sm font-medium">{viewingItem.coverage_area || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Avg Response</p><p className="text-sm font-medium">{viewingItem.avg_response_time || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">24/7</p><p className="text-sm font-medium">{viewingItem.availability_24_7 || "—"}</p></div>
@@ -188,7 +191,43 @@ export default function VendorsPage() {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Address</Label>
-              <Input value={editingItem?.address || ""} onChange={e => updateField("address", e.target.value)} placeholder="Full Address" />
+              <div className="flex gap-2">
+                <Input value={editingItem?.address || ""} onChange={e => updateField("address", e.target.value)} placeholder="Full Address" />
+                <Button 
+                  type="button"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  disabled={!editingItem?.address || isGeocoding}
+                  onClick={async () => {
+                    if (!editingItem?.address) return;
+                    setIsGeocoding(true);
+                    try {
+                      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(editingItem.address)}`);
+                      const data = await res.json();
+                      if (data && data.length > 0) {
+                        updateField("latitude", data[0].lat);
+                        updateField("longitude", data[0].lon);
+                      } else {
+                        alert("Could not find coordinates for this address.");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      alert("Error fetching coordinates.");
+                    } finally {
+                      setIsGeocoding(false);
+                    }
+                  }}
+                >
+                  {isGeocoding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Get Lat/Lng"}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Latitude</Label>
+              <Input value={editingItem?.latitude || ""} onChange={e => updateField("latitude", e.target.value)} placeholder="e.g. 19.218330" />
+            </div>
+            <div className="space-y-2">
+              <Label>Longitude</Label>
+              <Input value={editingItem?.longitude || ""} onChange={e => updateField("longitude", e.target.value)} placeholder="e.g. 72.978088" />
             </div>
             <div className="space-y-2">
               <Label>Type</Label>
