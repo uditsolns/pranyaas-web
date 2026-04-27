@@ -40,7 +40,7 @@ export default function VitalsPage() {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const filtered = vitals.filter(v => {
-    const pName = patients.find(p => String(p.id) === String(v.patient_id))?.full_name || "";
+    const pName = patients.find(p => String(p.user_id) === String(v.patient_id))?.full_name || "";
     return pName.toLowerCase().includes(search.toLowerCase());
   });
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
@@ -67,7 +67,7 @@ export default function VitalsPage() {
     setEditingVital(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
-  const getPatientName = (id: string) => patients.find(p => String(p.id) === String(id))?.full_name || `Patient #${id}`;
+  const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -130,7 +130,7 @@ export default function VitalsPage() {
               <Label>Patient <span className="text-destructive">*</span></Label>
               <Select value={editingVital?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select patient..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

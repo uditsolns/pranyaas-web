@@ -31,7 +31,7 @@ export default function EmergenciesPage() {
     updateMutation.mutate({ id, data: { status } });
   };
 
-  const getPatientName = (id: string) => patients.find(p => String(p.id) === String(id))?.full_name || `Patient #${id}`;
+  const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
 
   const filtered = emergencies.filter(e => {
     const matchesSearch = String(e.id).includes(search) ||

@@ -135,7 +135,7 @@ export default function RelativesPage() {
               <Label>Patient <span className="text-destructive">*</span></Label>
               <Select value={editingItem?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {!editingItem?.id && (

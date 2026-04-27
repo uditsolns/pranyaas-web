@@ -333,7 +333,7 @@ export default function PatientsPage() {
               <Label>Care Manager</Label>
               <Select value={editingPatient?.care_manager_id || ""} onValueChange={v => updateField("care_manager_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{cms.map(cm => <SelectItem key={cm.id} value={String(cm.id)}>{cm.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{cms.map(cm => <SelectItem key={cm.id} value={String(cm.user_id)}>{cm.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>

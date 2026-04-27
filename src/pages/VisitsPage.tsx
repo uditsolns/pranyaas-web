@@ -74,8 +74,8 @@ export default function VisitsPage() {
     setEditingVisit(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
-  const getPatientName = (id: string) => patients.find(p => String(p.id) === id)?.full_name || `Patient #${id}`;
-  const getCMName = (id: string) => cms.find(c => String(c.id) === id)?.name || `CM #${id}`;
+  const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
+  const getCMName = (id: string) => cms.find(c => String(c.user_id) === String(id))?.name || `CM #${id}`;
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -176,14 +176,14 @@ export default function VisitsPage() {
               <Label>Patient <span className="text-destructive">*</span></Label>
               <Select value={editingVisit?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Care Manager</Label>
               <Select value={editingVisit?.care_manager_id || ""} onValueChange={v => updateField("care_manager_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{cms.map(cm => <SelectItem key={cm.id} value={String(cm.id)}>{cm.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{cms.map(cm => <SelectItem key={cm.id} value={String(cm.user_id)}>{cm.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
