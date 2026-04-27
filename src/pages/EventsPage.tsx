@@ -3,6 +3,7 @@ import { Event } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, AlertCircle, Upload, X } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -191,7 +192,7 @@ export default function EventsPage() {
                     )}
                   </td>
                   <td className="p-4 text-sm font-medium text-foreground">{e.event_name}</td>
-                  <td className="p-4 text-sm text-foreground">{e.event_date || "—"}</td>
+                  <td className="p-4 text-sm text-foreground whitespace-nowrap">{formatDate(e.event_date)}</td>
                   <td className="p-4 text-sm text-foreground">{e.location || "—"}</td>
                   <td className="p-4 text-sm text-foreground">{e.organizer_name || "—"}</td>
                   <td className="p-4"><StatusBadge status={e.status || "active"} /></td>
@@ -221,7 +222,7 @@ export default function EventsPage() {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Event Name</p><p className="text-sm font-medium">{viewingEvent.event_name}</p></div>
-                <div><p className="text-xs text-muted-foreground">Date</p><p className="text-sm font-medium">{viewingEvent.event_date || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Date</p><p className="text-sm font-medium">{formatDate(viewingEvent.event_date)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Time</p><p className="text-sm font-medium">{viewingEvent.event_time || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Location</p><p className="text-sm font-medium">{viewingEvent.location || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Organizer</p><p className="text-sm font-medium">{viewingEvent.organizer_name || "—"}</p></div>

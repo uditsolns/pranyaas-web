@@ -4,6 +4,7 @@ import { Patient, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";

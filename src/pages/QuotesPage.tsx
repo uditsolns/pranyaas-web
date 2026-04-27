@@ -10,6 +10,8 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { useApiList, useApiCreate, useApiUpdate, useApiDelete } from "@/hooks/useApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -200,7 +202,7 @@ export default function QuotesPage() {
                     <td className="p-4 text-sm text-foreground">{item.said_by || "Unknown"}</td>
                     <td className="p-4 text-sm capitalize text-foreground">{item.type || "anytime"}</td>
                     <td className="p-4 text-sm text-foreground">
-                      {item.created_at ? new Date(item.created_at).toLocaleDateString() : "-"}
+                      {formatDate(item.created_at)}
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-1">
@@ -270,13 +272,13 @@ export default function QuotesPage() {
                 <div>
                   <p className="text-xs text-muted-foreground">Created At</p>
                   <p className="text-sm font-medium">
-                    {viewingQuote.created_at ? new Date(viewingQuote.created_at).toLocaleString() : "-"}
+                    {formatDateTime(viewingQuote.created_at)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Updated At</p>
                   <p className="text-sm font-medium">
-                    {viewingQuote.updated_at ? new Date(viewingQuote.updated_at).toLocaleString() : "-"}
+                    {formatDateTime(viewingQuote.updated_at)}
                   </p>
                 </div>
               </div>

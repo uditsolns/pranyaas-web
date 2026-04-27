@@ -2,6 +2,8 @@
  * Export data as CSV or PDF (simple table layout).
  */
 
+import { formatDate, formatDateTime } from "@/lib/utils";
+
 export function exportCSV(filename: string, columns: { key: string; label: string }[], data: Record<string, any>[]) {
   const header = columns.map(c => `"${c.label}"`).join(",");
   const rows = data.map(row =>
@@ -33,7 +35,7 @@ export function exportPDF(title: string, columns: { key: string; label: string }
   .footer { margin-top: 16px; font-size: 9px; color: #999; text-align: right; }
 </style></head><body>
 <h1>${title}</h1>
-<div class="meta">Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()} &middot; ${data.length} records</div>
+<div class="meta">Exported on ${formatDateTime(new Date())} &middot; ${data.length} records</div>
 <table><thead><tr>${columns.map(c => `<th>${c.label}</th>`).join("")}</tr></thead><tbody>`;
 
   for (const row of data) {

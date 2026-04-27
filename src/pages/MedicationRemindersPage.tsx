@@ -4,6 +4,7 @@ import { MedicationReminder, Patient } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, Pill } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -131,8 +132,8 @@ export default function MedicationRemindersPage() {
                   <td className="p-4 text-sm text-foreground">{m.medicine_name}</td>
                   <td className="p-4 text-sm text-foreground">{m.dosage} <span className="text-muted-foreground text-xs ml-1">({m.frequency})</span></td>
                   <td className="p-4 text-sm text-foreground">
-                    <div className="text-xs">{m.start_date} to</div>
-                    <div className="text-xs font-medium">{m.end_date}</div>
+                    <div className="text-xs">{formatDate(m.start_date)} to</div>
+                    <div className="text-xs font-medium">{formatDate(m.end_date)}</div>
                   </td>
                   <td className="p-4"><StatusBadge status={m.status || "pending"} /></td>
                   <td className="p-4">
@@ -162,7 +163,7 @@ export default function MedicationRemindersPage() {
                 <div><p className="text-xs text-muted-foreground">Medicine</p><p className="text-sm font-medium">{viewingItem.medicine_name}</p></div>
                 <div><p className="text-xs text-muted-foreground">Dosage</p><p className="text-sm font-medium">{viewingItem.dosage}</p></div>
                 <div><p className="text-xs text-muted-foreground">Frequency</p><p className="text-sm font-medium">{viewingItem.frequency}</p></div>
-                <div><p className="text-xs text-muted-foreground">Period</p><p className="text-sm font-medium">{viewingItem.start_date} to {viewingItem.end_date}</p></div>
+                <div><p className="text-xs text-muted-foreground">Period</p><p className="text-sm font-medium">{formatDate(viewingItem.start_date)} to {formatDate(viewingItem.end_date)}</p></div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>Close</Button>

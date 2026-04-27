@@ -4,6 +4,7 @@ import { Task, Patient, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -132,7 +133,7 @@ export default function TasksPage() {
                   <td className="p-4 text-sm font-medium text-foreground">{t.title}</td>
                   <td className="p-4 text-sm text-foreground">{t.patient_id ? getPatientName(t.patient_id) : "—"}</td>
                   <td className="p-4 text-sm text-foreground">{t.care_manager_id ? getCMName(t.care_manager_id) : "—"}</td>
-                  <td className="p-4 text-sm text-foreground">{t.due_date || "—"}</td>
+                  <td className="p-4 text-sm text-foreground">{formatDate(t.due_date)}</td>
                   <td className="p-4"><StatusBadge status={t.priority || "1"} /></td>
                   <td className="p-4"><StatusBadge status={t.status || "pending"} /></td>
                   <td className="p-4">
@@ -157,7 +158,7 @@ export default function TasksPage() {
             <div className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Title</p><p className="text-sm font-medium">{viewingTask.title}</p></div>
-                <div><p className="text-xs text-muted-foreground">Due Date</p><p className="text-sm font-medium">{viewingTask.due_date || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Due Date</p><p className="text-sm font-medium">{formatDate(viewingTask.due_date)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{viewingTask.patient_id ? getPatientName(viewingTask.patient_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewingTask.care_manager_id ? getCMName(viewingTask.care_manager_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Priority</p><StatusBadge status={viewingTask.priority} /></div>

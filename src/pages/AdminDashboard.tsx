@@ -1,12 +1,12 @@
-import { Users, UserCog, ClipboardList, Calendar, AlertTriangle } from "lucide-react";
+import { Users, UserCog, ClipboardList, Calendar, AlertTriangle, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useApiGet, useApiList } from "@/hooks/useApi";
 import { QuoteCard } from "@/components/QuoteCard";
 import { CareVisit, EmergencyAlert } from "@/types";
 import { patientGrowthData, visitActivityData, emergencyTrendsData } from "@/data/mock";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2 } from "lucide-react";
 
 interface DashboardCounts {
   patient_count?: number;
@@ -103,7 +103,7 @@ export default function AdminDashboard() {
               <div key={v.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                 <div>
                   <p className="text-sm font-medium text-foreground">{v.visit_type}</p>
-                  <p className="text-xs text-muted-foreground">{v.visit_time ? new Date(v.visit_time).toLocaleDateString() : "—"}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(v.visit_time)}</p>
                 </div>
                 <StatusBadge status={v.status || v.visit_type} />
               </div>
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
               <div key={e.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                 <div>
                   <p className="text-sm font-medium text-foreground">{e.triggered_by}</p>
-                  <p className="text-xs text-muted-foreground">Triggered: {new Date(e.created_at).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Triggered: {formatDateTime(e.created_at)}</p>
                 </div>
                 <StatusBadge status={e.status} />
               </div>

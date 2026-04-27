@@ -3,6 +3,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { VitalRecord, Patient, CareVisit, ApiUser } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -107,7 +108,7 @@ export default function VitalsPage() {
                   <td className="p-3 text-sm">{v.heart_rate || "—"}</td>
                   <td className="p-3 text-sm">{v.bp || "—"}</td>
                   <td className="p-3 text-sm">{v.sugar_level || "—"}</td>
-                  <td className="p-3 text-sm">{v.recorded_at ? new Date(v.recorded_at).toLocaleDateString() : v.created_at ? new Date(v.created_at).toLocaleDateString() : "—"}</td>
+                  <td className="p-3 text-sm">{formatDate(v.recorded_at || v.created_at)}</td>
                   <td className="p-3">
                     <div className="flex items-center justify-end gap-1">
                       {hasEdit && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(v)}><Pencil className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Edit</TooltipContent></Tooltip>}

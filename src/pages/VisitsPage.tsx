@@ -3,7 +3,8 @@ import { ExportButton } from "@/components/ExportButton";
 import { CareVisit, Patient, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -126,7 +127,7 @@ export default function VisitsPage() {
                 <tr key={v.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{getPatientName(v.patient_id)}</td>
                   <td className="p-4 text-sm text-foreground">{getCMName(v.care_manager_id)}</td>
-                  <td className="p-4 text-sm text-foreground">{v.visit_time ? new Date(v.visit_time).toLocaleString() : "—"}</td>
+                  <td className="p-4 text-sm text-foreground">{formatDateTime(v.visit_time)}</td>
                   <td className="p-4 text-sm text-foreground">{v.due_date || "—"}</td>
                   <td className="p-4"><StatusBadge status={v.visit_type} /></td>
                   <td className="p-4"><StatusBadge status={v.status || "pending"} /></td>
@@ -153,7 +154,7 @@ export default function VisitsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewingVisit.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{getCMName(viewingVisit.care_manager_id)}</p></div>
-                <div><p className="text-xs text-muted-foreground">Visit Time</p><p className="text-sm font-medium">{viewingVisit.visit_time ? new Date(viewingVisit.visit_time).toLocaleString() : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Visit Time</p><p className="text-sm font-medium">{formatDateTime(viewingVisit.visit_time)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Due Date</p><p className="text-sm font-medium">{viewingVisit.due_date || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Type</p><StatusBadge status={viewingVisit.visit_type} /></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingVisit.status || "pending"} /></div>

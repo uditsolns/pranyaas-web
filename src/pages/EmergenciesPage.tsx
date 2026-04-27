@@ -124,7 +124,7 @@ export default function EmergenciesPage() {
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <p className="text-xs text-muted-foreground">Created</p>
-                  <p className="text-sm font-medium text-foreground">{new Date(e.created_at).toLocaleString()}</p>
+                  <p className="text-sm font-medium text-foreground">{new Date(e.created_at).toLocaleString('en-GB')}</p>
                 </div>
                 {e.latitude && (
                   <div>
@@ -173,7 +173,7 @@ export default function EmergenciesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Triggered By</p><p className="text-sm font-medium">{viewing.triggered_by}</p></div>
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewing.patient_id)}</p></div>
-                <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{new Date(viewing.created_at).toLocaleString()}</p></div>
+                <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{new Date(viewing.created_at).toLocaleString('en-GB')}</p></div>
                 {viewing.latitude && <div><p className="text-xs text-muted-foreground">Location</p><p className="text-sm font-medium">{viewing.latitude}, {viewing.longitude}</p></div>}
               </div>
               <div className="flex justify-end">
