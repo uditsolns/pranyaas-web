@@ -19,6 +19,7 @@ import CareManagersPage from "./pages/CareManagersPage";
 import RelativesPage from "./pages/RelativesPage";
 import VendorsPage from "./pages/VendorsPage";
 import EventsPage from "./pages/EventsPage";
+import MedicationRemindersPage from "./pages/MedicationRemindersPage";
 import QuotesPage from "./pages/QuotesPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -73,6 +74,7 @@ const App = () => (
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/visits" element={<VisitsPage />} />
                 <Route path="/vitals" element={<VitalsPage />} />
+                <Route path="/medications" element={<MedicationRemindersPage />} />
                 <Route path="/emergencies" element={<EmergenciesPage />} />
                 <Route path="/care-managers" element={<CareManagersPage />} />
                 <Route path="/relatives" element={<RelativesPage />} />
