@@ -165,22 +165,6 @@ export default function EmergenciesPage() {
                   </div>
                 )}
               </div>
-              {hasEdit && e.status !== "resolved" && (
-                <div className="mt-4 flex gap-2">
-                  {e.status === "active" && (
-                    <Button size="sm" variant="outline" className="text-warning border-warning/30 hover:bg-warning/10"
-                      onClick={() => handleStatusUpdate(e.id, "acknowledged")} disabled={updateMutation.isPending}>
-                      Acknowledge
-                    </Button>
-                  )}
-                  {(e.status === "active" || e.status === "acknowledged") && (
-                    <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90"
-                      onClick={() => handleStatusUpdate(e.id, "resolved")} disabled={updateMutation.isPending}>
-                      Resolve Emergency
-                    </Button>
-                  )}
-                </div>
-              )}
             </div>
           ))}
         </div>
