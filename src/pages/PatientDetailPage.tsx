@@ -23,7 +23,7 @@ export default function PatientDetailPage() {
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
   const { data: emergencies = [], isLoading: le } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
   const { data: relatives = [], isLoading: lr } = useApiList<Relative>("relatives", "/relatives");
-  const { data: contacts = [], isLoading: lc } = useApiList<EmergencyContact>("emergency-contacts", "/emergency-contacts");
+  const { data: contacts = [], isLoading: lc } = useApiList<EmergencyContact>(`emergency-contacts-${id}`, `/emergency-contacts/${id}`);
 
   const createContact = useApiCreate<EmergencyContact>("emergency-contacts", "/emergency-contacts", "Emergency Contact");
   const updateContact = useApiUpdate<EmergencyContact>("emergency-contacts", "/emergency-contacts", "Emergency Contact");
@@ -58,7 +58,7 @@ export default function PatientDetailPage() {
   const myTasks = tasks.filter(t => t.patient_id === pid);
   const myEmergencies = emergencies.filter(e => String(e.patient_id) === pid);
   const myRelatives = relatives.filter(r => String(r.patient_id) === String(patient.user_id));
-  const myContacts = contacts.filter(c => String(c.patient_id) === pid);
+  const myContacts = Array.isArray(contacts) ? contacts : (contacts && typeof contacts === 'object' && Object.keys(contacts).length > 0 ? [contacts] : []);
 
   const openAddContact = () => {
     setEditingContact({ name: "", relation: "", phone: "", email: "", address: "", patient_id: pid });
