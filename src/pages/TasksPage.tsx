@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { Task, Patient, CareManager } from "@/types";
+import { Task, Patient, CareManager, ApiUser } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
@@ -23,6 +23,7 @@ import { canEdit } from "@/lib/permissions";
 const emptyTask: Partial<Task> = {
   title: "", description: "", patient_id: "", care_manager_id: "",
   due_date: "", priority: "", status: "", remark: "",
+  created_by: "",
 };
 
 export default function TasksPage() {
@@ -31,6 +32,7 @@ export default function TasksPage() {
   const { data: tasks = [], isLoading, isError, error } = useApiList<Task>("tasks", "/tasks");
   const { data: patients = [] } = useApiList<Patient>("patients", "/patients");
   const { data: cms = [] } = useApiList<CareManager>("care-managers", "/care-managers");
+  const { data: users = [] } = useApiList<ApiUser>("users", "/users");
   const createMutation = useApiCreate<Task>("tasks", "/tasks", "Task");
   const updateMutation = useApiUpdate<Task>("tasks", "/tasks", "Task");
   const deleteMutation = useApiDelete("tasks", "/tasks", "Task");
@@ -224,6 +226,15 @@ export default function TasksPage() {
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="in progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Created By</Label>
+              <Select value={editingTask?.created_by || ""} onValueChange={v => updateField("created_by", v)}>
+                <SelectTrigger><SelectValue placeholder="Select User..." /></SelectTrigger>
+                <SelectContent>
+                  {users.map(u => <SelectItem key={u.id} value={String(u.id)}>{u.name} ({u.role?.name || "User"})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
