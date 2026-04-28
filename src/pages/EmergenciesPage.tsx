@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { TablePagination } from "@/components/TablePagination";
 import { usePagination } from "@/hooks/usePagination";
 import { useApiList, useApiUpdate } from "@/hooks/useApi";
+import { AddressDisplay } from "@/components/AddressDisplay";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
@@ -55,14 +56,14 @@ export default function EmergenciesPage() {
         <ExportButton filename="emergencies" title="Emergencies Report" columns={[
           { key: "id", label: "ID" }, { key: "triggered_by", label: "Triggered By" }, { key: "status", label: "Status" },
           { key: "created_at", label: "Time" },
-        ]} data={filtered} />
+        ]} data={filtered.map(e => ({ ...e, status: e.status === "active" ? "Need Action" : e.status }))} />
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-destructive/5 rounded-xl p-4 border border-destructive/20">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="h-4 w-4 text-destructive" />
-            <span className="text-xs font-medium text-destructive uppercase">Active</span>
+            <span className="text-xs font-medium text-destructive uppercase">Need Action</span>
           </div>
           <p className="text-2xl font-bold text-foreground">{triggered.length}</p>
         </div>
@@ -91,7 +92,7 @@ export default function EmergenciesPage() {
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="active">Need Action</SelectItem>
             <SelectItem value="acknowledged">Acknowledged</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
           </SelectContent>
@@ -115,7 +116,7 @@ export default function EmergenciesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <StatusBadge status={e.status} />
+                  <StatusBadge status={e.status === "active" ? "Need Action" : e.status} />
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setViewing(e); setDetailOpen(true); }}>
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -129,7 +130,7 @@ export default function EmergenciesPage() {
                 {e.latitude && (
                   <div>
                     <p className="text-xs text-muted-foreground">Location</p>
-                    <p className="text-sm font-medium text-foreground">{e.latitude}, {e.longitude}</p>
+                    <AddressDisplay lat={e.latitude} lon={e.longitude} />
                   </div>
                 )}
               </div>
@@ -167,14 +168,14 @@ export default function EmergenciesPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold">Emergency #{viewing.id}</p>
-                  <StatusBadge status={viewing.status} />
+                  <StatusBadge status={viewing.status === "active" ? "Need Action" : viewing.status} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Triggered By</p><p className="text-sm font-medium">{viewing.triggered_by}</p></div>
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewing.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{new Date(viewing.created_at).toLocaleString('en-GB')}</p></div>
-                {viewing.latitude && <div><p className="text-xs text-muted-foreground">Location</p><p className="text-sm font-medium">{viewing.latitude}, {viewing.longitude}</p></div>}
+                {viewing.latitude && <div><p className="text-xs text-muted-foreground">Location</p><AddressDisplay lat={viewing.latitude} lon={viewing.longitude} /></div>}
               </div>
               <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>Close</Button>

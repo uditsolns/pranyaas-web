@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useApiGet, useApiList } from "@/hooks/useApi";
-import { Patient, VitalRecord, CareVisit, Task } from "@/types";
+import { Patient, VitalRecord, CareVisit, Task, EmergencyAlert, Relative } from "@/types";
+import { AddressDisplay } from "@/components/AddressDisplay";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,10 @@ export default function PatientDetailPage() {
   const { data: vitals = [], isLoading: lv } = useApiList<VitalRecord>("vitals", "/vitals");
   const { data: visits = [], isLoading: lvs } = useApiList<CareVisit>("visits", "/care-visits");
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
+  const { data: emergencies = [], isLoading: le } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
+  const { data: relatives = [], isLoading: lr } = useApiList<Relative>("relatives", "/relatives");
 
-  const isLoading = lp || lv || lvs || lt;
+  const isLoading = lp || lv || lvs || lt || le || lr;
 
   if (isLoading) {
     return (
@@ -40,6 +43,8 @@ export default function PatientDetailPage() {
   const myVitals = vitals.filter(v => v.patient_id === pid);
   const myVisits = visits.filter(v => v.patient_id === pid);
   const myTasks = tasks.filter(t => t.patient_id === pid);
+  const myEmergencies = emergencies.filter(e => String(e.patient_id) === pid);
+  const myRelatives = relatives.filter(r => String(r.patient_id) === String(patient.user_id));
 
   return (
     <div className="space-y-6">
@@ -63,6 +68,7 @@ export default function PatientDetailPage() {
           <TabsTrigger value="vitals">Vitals</TabsTrigger>
           <TabsTrigger value="visits">Visits</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="emergency">Emergency</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -178,6 +184,64 @@ export default function PatientDetailPage() {
               ))}
               {myTasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks assigned</p>}
             </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="emergency">
+          <div className="space-y-6">
+            {/* Emergency Contacts Section */}
+            <div className="bg-destructive/5 rounded-xl p-5 border border-destructive/20">
+              <h3 className="text-sm font-bold text-destructive mb-3 uppercase tracking-wider">Emergency Contacts</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {myRelatives.map(r => (
+                  <div key={r.id} className="bg-card p-3 rounded-lg border border-border/50 shadow-sm">
+                    <p className="text-sm font-semibold text-foreground">{r.relative_name}</p>
+                    <p className="text-xs text-muted-foreground">{r.relationship}</p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs font-medium text-foreground flex items-center gap-2">
+                        <span className="text-muted-foreground w-12">Phone:</span> {r.phone_number}
+                      </p>
+                      {r.email && (
+                        <p className="text-xs font-medium text-foreground flex items-center gap-2">
+                          <span className="text-muted-foreground w-12">Email:</span> {r.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {myRelatives.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">No emergency contacts (relatives) registered.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Emergency History Section 
+            <div className="bg-card rounded-xl p-5 card-shadow border border-border/50">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Emergency History</h3>
+              <div className="space-y-4">
+                {myEmergencies.map(e => (
+                  <div key={e.id} className="p-4 rounded-lg border border-border/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Emergency #{e.id}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString('en-GB')}</p>
+                      </div>
+                      <StatusBadge status={e.status === "active" ? "Need Action" : e.status} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Triggered By</p>
+                      <p className="text-sm font-medium">{e.triggered_by}</p>
+                    </div>
+                    {e.latitude && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Location</p>
+                        <AddressDisplay lat={e.latitude} lon={e.longitude} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {myEmergencies.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No emergency alerts recorded for this patient.</p>}
+              </div>
+            </div> */}
           </div>
         </TabsContent>
       </Tabs>

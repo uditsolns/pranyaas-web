@@ -4,6 +4,7 @@ type StatusType = string;
 
 const statusColors: Record<string, string> = {
   Active: "bg-success/10 text-success",
+  "Need Action": "bg-destructive/10 text-destructive",
   "In Progress": "bg-info/10 text-info",
   Completed: "bg-success/10 text-success",
   Scheduled: "bg-primary/10 text-primary",
@@ -28,10 +29,16 @@ const statusColors: Record<string, string> = {
 };
 
 export function StatusBadge({ status }: { status: StatusType }) {
+  // Try exact match, then title case, then first match in a case-insensitive way
+  const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  const colorClass = statusColors[status] || statusColors[normalizedStatus] || 
+    Object.entries(statusColors).find(([key]) => key.toLowerCase() === status.toLowerCase())?.[1] || 
+    "bg-muted text-muted-foreground";
+
   return (
     <span className={cn(
       "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-      statusColors[status] || "bg-muted text-muted-foreground"
+      colorClass
     )}>
       {status}
     </span>
