@@ -31,7 +31,7 @@ const emptyPatient: PatientForm = {
   mobility_status: "", fall_risk_level: "", mental_health_status: "",
   baseline_bp: "", baseline_sugar: "", baseline_spo2: "",
   weight: "", height: "", insurance_policy_name: "", insurance_policy_number: "",
-  risk_score: "", last_visit_date: "", care_manager_id: "",
+  risk_score: "", last_visit_date: "", kyc_status: "", care_manager_id: "",
 };
 
 export default function PatientsPage() {
@@ -93,6 +93,7 @@ export default function PatientsPage() {
         <ExportButton filename="patients" title="Patients Report" columns={[
           { key: "full_name", label: "Name" }, { key: "age", label: "Age" }, { key: "gender", label: "Gender" },
           { key: "blood_group", label: "Blood Group" }, { key: "primary_diagnosis", label: "Diagnosis" }, { key: "risk_category", label: "Risk" },
+          { key: "kyc_status", label: "KYC Status" },
         ]} data={filtered} />
       </PageHeader>
 
@@ -123,6 +124,7 @@ export default function PatientsPage() {
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Diagnosis</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Risk</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Gender</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">KYC Status</th>
                 <th className="text-right text-xs font-medium text-muted-foreground p-4">Actions</th>
               </tr>
             </thead>
@@ -142,10 +144,23 @@ export default function PatientsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="p-4 text-sm text-foreground">{p.age}y</td>
+                  <td className="p-4 text-sm text-foreground">{p.age ? `${p.age}y` : "NA"}</td>
                   <td className="p-4 text-sm text-foreground">{p.primary_diagnosis}</td>
                   <td className="p-4"><StatusBadge status={p.risk_category || "Low"} /></td>
                   <td className="p-4 text-sm text-foreground">{p.gender}</td>
+                  <td className="p-4 text-sm">
+                    {p.kyc_status ? (
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-semibold uppercase ${
+                        p.kyc_status.toLowerCase() === 'verified' ? 'bg-green-100 text-green-700' : 
+                        p.kyc_status.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {p.kyc_status}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground italic text-xs">Not Set</span>
+                    )}
+                  </td>
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip><TooltipTrigger asChild>
@@ -303,6 +318,18 @@ export default function PatientsPage() {
                   <SelectItem value="Medium">Medium</SelectItem>
                   <SelectItem value="High">High</SelectItem>
                   <SelectItem value="Critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>KYC Status</Label>
+              <Select value={editingPatient?.kyc_status || ""} onValueChange={v => updateField("kyc_status", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Verified">Verified</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="Not Started">Not Started</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -87,7 +87,7 @@ export default function PatientDetailPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">{patient.full_name}</h1>
-          <p className="text-sm text-muted-foreground">ID: {patient.id} · {patient.age}y · {patient.gender}</p>
+          <p className="text-sm text-muted-foreground">ID: {patient.id} · {patient.age ? `${patient.age}y` : "NA"} · {patient.gender}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <StatusBadge status={patient.risk_category || "Low"} />
@@ -119,7 +119,7 @@ export default function PatientDetailPage() {
               {[
                 { label: "Full Name", value: patient.full_name },
                 { label: "Date of Birth", value: patient.dob },
-                { label: "Age", value: patient.age ? `${patient.age} years` : "N/A" },
+                { label: "Age", value: patient.age ? `${patient.age} years` : "NA" },
                 { label: "Gender", value: patient.gender },
                 { label: "Blood Group", value: patient.blood_group },
                 { label: "Weight", value: patient.weight ? `${patient.weight} kg` : "N/A" },

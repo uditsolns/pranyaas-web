@@ -121,6 +121,7 @@ export interface Patient {
   insurance_policy_photo: string | null;
   risk_score: string;
   last_visit_date: string;
+  kyc_status: string | null;
   care_manager_id: string;
   created_at: string;
   updated_at: string;
