@@ -66,10 +66,20 @@ export default function TasksPage() {
 
   const handleSave = () => {
     if (!editingTask?.title?.trim()) return;
+
+    // Set created_by based on category as per requirements
+    let created_by = "";
+    if (editingTask.category === "Relative" && editingTask.relative_id) {
+      const relative = relatives.find(r => String(r.id) === String(editingTask.relative_id));
+      created_by = relative ? String(relative.user_id) : "";
+    }
+
+    const payload = { ...editingTask, created_by };
+
     if (editingTask.id) {
-      updateMutation.mutate({ id: editingTask.id, data: editingTask }, { onSuccess: () => setDialogOpen(false) });
+      updateMutation.mutate({ id: editingTask.id, data: payload }, { onSuccess: () => setDialogOpen(false) });
     } else {
-      createMutation.mutate(editingTask, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate(payload, { onSuccess: () => setDialogOpen(false) });
     }
   };
 
@@ -270,15 +280,6 @@ export default function TasksPage() {
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="in progress">In Progress</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Created By</Label>
-              <Select value={editingTask?.created_by || ""} onValueChange={v => updateField("created_by", v)}>
-                <SelectTrigger><SelectValue placeholder="Select User..." /></SelectTrigger>
-                <SelectContent>
-                  {users.map(u => <SelectItem key={u.id} value={String(u.id)}>{u.name} ({u.role?.name || "User"})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
