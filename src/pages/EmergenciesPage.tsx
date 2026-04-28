@@ -153,7 +153,17 @@ export default function EmergenciesPage() {
                   )}
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-border/50">
+                <div>
+                  <p className="text-xs text-muted-foreground">Care Manager</p>
+                  <p className="text-sm font-semibold text-foreground">{e.patient?.care_manager?.name || "—"}</p>
+                  <p className="text-xs text-muted-foreground">{e.patient?.care_manager?.phone || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Relative</p>
+                  <p className="text-sm font-semibold text-foreground">{e.patient?.relative?.name || "—"}</p>
+                  <p className="text-xs text-muted-foreground">{e.patient?.relative?.phone || "—"}</p>
+                </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Created</p>
                   <p className="text-sm font-medium text-foreground">{new Date(e.created_at).toLocaleString('en-GB')}</p>
@@ -189,6 +199,8 @@ export default function EmergenciesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Triggered By</p><p className="text-sm font-medium">{viewing.triggered_by}</p></div>
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewing.patient_id)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewing.patient?.care_manager?.name || "—"} ({viewing.patient?.care_manager?.phone || "—"})</p></div>
+                <div><p className="text-xs text-muted-foreground">Relative</p><p className="text-sm font-medium">{viewing.patient?.relative?.name || "—"} ({viewing.patient?.relative?.phone || "—"})</p></div>
                 <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{new Date(viewing.created_at).toLocaleString('en-GB')}</p></div>
                 {viewing.latitude && <div><p className="text-xs text-muted-foreground">Location</p><AddressDisplay lat={viewing.latitude} lon={viewing.longitude} /></div>}
               </div>

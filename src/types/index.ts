@@ -244,6 +244,20 @@ export interface EmergencyAlert {
   status: string;
   created_at: string;
   updated_at: string;
+  patient?: {
+    id: number;
+    full_name: string;
+    care_manager?: {
+      id: number;
+      name: string;
+      phone: string;
+    };
+    relative?: {
+      id: number;
+      name: string;
+      phone: string;
+    };
+  };
 }
 
 export interface EmergencyAction {
