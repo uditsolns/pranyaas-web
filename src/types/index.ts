@@ -15,6 +15,75 @@ export interface ApiUser {
   role?: { id: number; name: string; description: string | null };
 }
 
+export interface PatientFamily {
+  id: number;
+  patient_id: string;
+  children_location: string;
+  visit_frequency: string;
+  update_receiver: string;
+  communication_mode: string;
+}
+
+export interface PatientMedical {
+  id: number;
+  patient_id: string;
+  conditions: string; // JSON string array
+  medications: string;
+  medicine_reminder: boolean;
+  hospitalization: boolean;
+  preferred_doctor: string;
+  preferred_hospital: string;
+}
+
+export interface PatientMobility {
+  id: number;
+  patient_id: string;
+  walking_status: string;
+  bath: boolean;
+  washroom: boolean;
+  dressing: boolean;
+  cooking: boolean;
+  caregiver_needed: boolean;
+}
+
+export interface PatientFallRisk {
+  id: number;
+  patient_id: string;
+  fall_history: boolean;
+  walking_aid: string;
+  house_type: string;
+  floor: string;
+  lift: boolean;
+  slippery_floor: boolean;
+  stairs: boolean;
+  grab_bars: boolean;
+}
+
+export interface PatientSocial {
+  id: number;
+  patient_id: string;
+  family_contact: string;
+  lonely: boolean;
+  hobbies: string;
+}
+
+export interface PatientLifestyle {
+  id: number;
+  patient_id: string;
+  diet: string;
+  addiction: string;
+}
+
+export interface PatientEmergency {
+  id: number;
+  patient_id: string;
+  family_doctor: string;
+  hospital: string;
+  insurance: boolean;
+  insurance_details: string;
+  consent: boolean;
+}
+
 export interface Patient {
   id: number;
   user_id: string;
@@ -56,6 +125,19 @@ export interface Patient {
   created_at: string;
   updated_at: string;
   user?: ApiUser;
+  care_manager?: ApiUser;
+  relative_user?: ApiUser;
+  emergency_alerts?: EmergencyAlert[];
+  care_plans?: CarePlan[];
+  family?: PatientFamily;
+  medical?: PatientMedical;
+  mobility?: PatientMobility;
+  fall_risk?: PatientFallRisk;
+  social?: PatientSocial;
+  lifestyle?: PatientLifestyle;
+  emergency?: PatientEmergency;
+  vitals?: VitalRecord; // The API seems to return a single vitals object too
+  living_situation?: string;
 }
 
 export interface CareManager {
@@ -146,6 +228,7 @@ export interface VitalRecord {
   bp: string;
   heart_rate: string;
   sugar_level: string;
+  spo2: string;
   temperature: string;
   recorded_at: string;
   created_at: string;
@@ -234,8 +317,11 @@ export interface ServiceRequest {
 export interface CarePlan {
   id: number;
   patient_id: string;
+  plan_id: string | null;
+  price: string | null;
+  duration_days: string | null;
   plan_type: string;
-  notes: string;
+  notes: string | null;
   start_date: string;
   end_date: string;
   created_at: string;

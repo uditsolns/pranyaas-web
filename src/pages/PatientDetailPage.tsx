@@ -95,14 +95,22 @@ export default function PatientDetailPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="medical">Medical</TabsTrigger>
-          <TabsTrigger value="vitals">Vitals</TabsTrigger>
-          <TabsTrigger value="visits">Visits</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="emergency">Emergency</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2 -mb-2">
+          <TabsList className="w-max flex-shrink-0">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="family">Family</TabsTrigger>
+            <TabsTrigger value="medical">Medical</TabsTrigger>
+            <TabsTrigger value="vitals">Vitals</TabsTrigger>
+            <TabsTrigger value="mobility">Mobility</TabsTrigger>
+            <TabsTrigger value="fall-risk">Fall Risk</TabsTrigger>
+            <TabsTrigger value="social">Social</TabsTrigger>
+            <TabsTrigger value="lifestyle">Lifestyle</TabsTrigger>
+            <TabsTrigger value="care-plans">Care Plans</TabsTrigger>
+            <TabsTrigger value="emergency">Emergency</TabsTrigger>
+            <TabsTrigger value="visits">Visits</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="profile">
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
@@ -111,45 +119,271 @@ export default function PatientDetailPage() {
               {[
                 { label: "Full Name", value: patient.full_name },
                 { label: "Date of Birth", value: patient.dob },
-                { label: "Age", value: `${patient.age} years` },
+                { label: "Age", value: patient.age ? `${patient.age} years` : "N/A" },
                 { label: "Gender", value: patient.gender },
                 { label: "Blood Group", value: patient.blood_group },
+                { label: "Weight", value: patient.weight ? `${patient.weight} kg` : "N/A" },
                 { label: "Phone", value: patient.user?.phone || "N/A" },
+                { label: "Email", value: patient.user?.email || "N/A" },
                 { label: "Address", value: patient.address },
+                { label: "Living Situation", value: patient.living_situation },
                 { label: "Primary Language", value: patient.primary_language },
+                { label: "Care Manager", value: patient.care_manager?.name || "N/A" },
               ].map(item => (
                 <div key={item.label}>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{item.value || "N/A"}</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5">{item.value || "—"}</p>
                 </div>
               ))}
             </div>
           </div>
         </TabsContent>
 
+        <TabsContent value="family">
+          <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Family Background</h3>
+            {patient.family ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { label: "Children Living In", value: patient.family.children_location?.replace('_', ' ') },
+                  { label: "Visit Frequency", value: patient.family.visit_frequency },
+                  { label: "Who Receives Updates", value: patient.family.update_receiver },
+                  { label: "Preferred Communication", value: patient.family.communication_mode },
+                  { label: "Associated Relative", value: patient.relative_user?.name },
+                  { label: "Relative Phone", value: patient.relative_user?.phone },
+                ].map(item => (
+                  <div key={item.label}>
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="text-sm font-medium text-foreground mt-0.5 capitalize">{item.value || "—"}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No family assessment data available.</p>
+            )}
+          </div>
+        </TabsContent>
+
         <TabsContent value="medical">
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Medical Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Medical & Clinical Baseline</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {[
                 { label: "Primary Diagnosis", value: patient.primary_diagnosis },
                 { label: "Secondary Diagnosis", value: patient.secondary_diagnosis },
                 { label: "Allergies", value: patient.allergies },
                 { label: "Current Medications", value: patient.current_medications },
-                { label: "Treating Doctor", value: patient.treating_doctor_name },
-                { label: "Preferred Hospital", value: patient.preferred_hospital },
                 { label: "Past Surgeries", value: patient.past_surgeries },
-                { label: "Mobility Status", value: patient.mobility_status },
-                { label: "Fall Risk Level", value: patient.fall_risk_level },
-                { label: "Mental Health Status", value: patient.mental_health_status },
                 { label: "Risk Category", value: patient.risk_category },
-                { label: "Blood Group", value: patient.blood_group },
               ].map(item => (
                 <div key={item.label}>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{item.value || "N/A"}</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5">{item.value || "—"}</p>
                 </div>
               ))}
+            </div>
+
+            {patient.medical && (
+              <>
+                <div className="h-px bg-border/50 my-6" />
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">Assessment Details</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { label: "Existing Conditions", value: (() => {
+                        try {
+                          const conditions = JSON.parse(patient.medical.conditions || "[]");
+                          return Array.isArray(conditions) ? conditions.join(", ") : patient.medical.conditions;
+                        } catch { return patient.medical.conditions; }
+                      })() 
+                    },
+                    { label: "Medication Reminders", value: patient.medical.medicine_reminder ? "Yes" : "No" },
+                    { label: "Recent Hospitalization", value: patient.medical.hospitalization ? "Yes" : "No" },
+                    { label: "Preferred Doctor", value: patient.medical.preferred_doctor },
+                    { label: "Preferred Hospital", value: patient.medical.preferred_hospital },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <p className="text-xs text-muted-foreground">{item.label}</p>
+                      <p className="text-sm font-medium text-foreground mt-0.5">{item.value || "—"}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="mobility">
+          <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Mobility & Daily Living</h3>
+            {patient.mobility ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="p-3 rounded-lg bg-secondary/20 border border-border/50">
+                    <p className="text-xs text-muted-foreground">Walking Status</p>
+                    <p className="text-sm font-bold text-primary mt-0.5 capitalize">{patient.mobility.walking_status}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary/20 border border-border/50">
+                    <p className="text-xs text-muted-foreground">Caregiver Needed</p>
+                    <p className="text-sm font-bold text-primary mt-0.5">{patient.mobility.caregiver_needed ? "Yes" : "No"}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Activities of Daily Living (Independent?)</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { label: "Bathing", value: patient.mobility.bath },
+                      { label: "Washroom", value: patient.mobility.washroom },
+                      { label: "Dressing", value: patient.mobility.dressing },
+                      { label: "Cooking", value: patient.mobility.cooking },
+                    ].map(item => (
+                      <div key={item.label} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                        <span className="text-sm font-medium">{item.label}</span>
+                        <div className={`h-2.5 w-2.5 rounded-full ${item.value ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-destructive"}`} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No mobility assessment data available.</p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="fall-risk">
+          <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Fall Risk & Home Safety</h3>
+            {patient.fall_risk ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { label: "History of Falls", value: patient.fall_risk.fall_history ? "Yes (Last 6 Months)" : "No" },
+                    { label: "Walking Aid", value: patient.fall_risk.walking_aid },
+                    { label: "House Type", value: patient.fall_risk.house_type },
+                    { label: "Floor", value: patient.fall_risk.floor },
+                    { label: "Lift Available", value: patient.fall_risk.lift ? "Yes" : "No" },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <p className="text-xs text-muted-foreground">{item.label}</p>
+                      <p className="text-sm font-medium text-foreground mt-0.5 capitalize">{item.value || "—"}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="h-px bg-border/50" />
+                
+                <div>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Home Safety Checklist</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                      { label: "Slippery Floors", value: patient.fall_risk.slippery_floor, danger: true },
+                      { label: "Stairs in Home", value: patient.fall_risk.stairs, danger: true },
+                      { label: "Grab Bars Installed", value: patient.fall_risk.grab_bars, danger: false },
+                    ].map(item => (
+                      <div key={item.label} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
+                        <span className="text-sm font-medium">{item.label}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${item.value ? (item.danger ? "bg-destructive/10 text-destructive" : "bg-green-500/10 text-green-600") : "bg-muted text-muted-foreground"}`}>
+                          {item.value ? "Yes" : "No"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No fall risk assessment data available.</p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="social">
+          <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Social & Emotional Wellbeing</h3>
+            {patient.social ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <p className="text-xs text-muted-foreground">Family Contact Frequency</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5 capitalize">{patient.social.family_contact}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Feels Lonely?</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-sm font-bold ${patient.social.lonely ? "text-destructive" : "text-green-600"}`}>
+                      {patient.social.lonely ? "Yes" : "No"}
+                    </span>
+                  </div>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <p className="text-xs text-muted-foreground">Hobbies & Interests</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {patient.social.hobbies?.split(',').map(hobby => (
+                      <span key={hobby} className="px-3 py-1 bg-secondary/30 rounded-full text-xs font-medium border border-border/50">
+                        {hobby.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No social assessment data available.</p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="lifestyle">
+          <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Nutrition & Lifestyle</h3>
+            {patient.lifestyle ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="p-4 rounded-lg border border-border/50 bg-secondary/10">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Diet Type</p>
+                  <p className="text-lg font-semibold text-primary capitalize">{patient.lifestyle.diet}</p>
+                </div>
+                <div className="p-4 rounded-lg border border-border/50 bg-secondary/10">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Addictions</p>
+                  <p className={`text-lg font-semibold capitalize ${patient.lifestyle.addiction === 'none' ? 'text-green-600' : 'text-destructive'}`}>
+                    {patient.lifestyle.addiction}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No lifestyle assessment data available.</p>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="care-plans">
+          <div className="bg-card rounded-xl card-shadow border border-border/50 overflow-hidden">
+            <div className="p-6 border-b border-border/50">
+              <h3 className="text-sm font-semibold text-foreground">Assigned Care Plans</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border/50 bg-secondary/30">
+                    {["Plan Type", "Duration", "Start Date", "End Date", "Notes"].map(h => (
+                      <th key={h} className="text-left text-xs font-medium text-muted-foreground p-3">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(patient.care_plans || []).map(plan => (
+                    <tr key={plan.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/10 transition-colors">
+                      <td className="p-3 text-sm font-medium">{plan.plan_type}</td>
+                      <td className="p-3 text-sm text-muted-foreground">
+                        {plan.duration_days ? `${plan.duration_days} Days` : "—"}
+                      </td>
+                      <td className="p-3 text-sm">{plan.start_date}</td>
+                      <td className="p-3 text-sm">{plan.end_date}</td>
+                      <td className="p-3 text-sm text-muted-foreground italic">{plan.notes || "—"}</td>
+                    </tr>
+                  ))}
+                  {(!patient.care_plans || patient.care_plans.length === 0) && (
+                    <tr><td colSpan={5} className="p-8 text-center text-sm text-muted-foreground italic">No active care plans found.</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </TabsContent>
@@ -160,7 +394,7 @@ export default function PatientDetailPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/50 bg-secondary/30">
-                    {["Recorded At", "Temperature", "Heart Rate", "BP", "Sugar Level"].map(h => (
+                    {["Recorded At", "Temperature", "Heart Rate", "BP", "Sugar Level", "SpO2"].map(h => (
                       <th key={h} className="text-left text-xs font-medium text-muted-foreground p-3">{h}</th>
                     ))}
                   </tr>
@@ -173,6 +407,7 @@ export default function PatientDetailPage() {
                       <td className="p-3 text-sm">{v.heart_rate || "—"}</td>
                       <td className="p-3 text-sm">{v.bp || "—"}</td>
                       <td className="p-3 text-sm">{v.sugar_level || "—"}</td>
+                      <td className="p-3 text-sm">{v.spo2 || "—"}</td>
                     </tr>
                   ))}
                   {myVitals.length === 0 && (
@@ -221,6 +456,29 @@ export default function PatientDetailPage() {
         </TabsContent>
         <TabsContent value="emergency">
           <div className="space-y-6">
+            {/* Assessment Emergency Details */}
+            {patient.emergency && (
+              <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
+                <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">Assessment Data</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { label: "Family Doctor", value: patient.emergency.family_doctor },
+                    { label: "Preferred Hospital", value: patient.emergency.hospital },
+                    { label: "Insurance Available", value: patient.emergency.insurance ? "Yes" : "No" },
+                    { label: "Insurance Details", value: patient.emergency.insurance_details },
+                    { label: "Consent for Emergency Intervention", value: patient.emergency.consent ? "Granted" : "Not Granted" },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <p className="text-xs text-muted-foreground">{item.label}</p>
+                      <p className={`text-sm font-medium mt-0.5 ${item.label === "Consent for Emergency Intervention" ? (patient.emergency?.consent ? "text-green-600" : "text-destructive") : "text-foreground"}`}>
+                        {item.value || "—"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Official Emergency Contacts Section */}
             <div className="bg-destructive/5 rounded-xl p-5 border border-destructive/20">
               <div className="flex items-center justify-between mb-4">
