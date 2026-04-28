@@ -180,6 +180,7 @@ export interface EmergencyContact {
   phone: string;
   email: string;
   address: string;
+  patient_id?: string;
   created_at: string;
   updated_at: string;
 }
