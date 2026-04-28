@@ -2,16 +2,17 @@ import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
 import { EmergencyAlert, Patient } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
-import { AlertTriangle, CheckCircle, Clock, Eye, Loader2, Search } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Eye, Loader2, Search, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { TablePagination } from "@/components/TablePagination";
 import { usePagination } from "@/hooks/usePagination";
-import { useApiList, useApiUpdate } from "@/hooks/useApi";
+import { useApiList, useApiUpdate, useApiCreate } from "@/hooks/useApi";
 import { AddressDisplay } from "@/components/AddressDisplay";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
@@ -22,14 +23,39 @@ export default function EmergenciesPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "emergencies");
   const updateMutation = useApiUpdate<EmergencyAlert>("emergency-alerts", "/emergency-alerts", "Emergency");
+  const createMutation = useApiCreate<EmergencyAlert>("emergency-alerts", "/emergency-alerts", "Emergency");
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [detailOpen, setDetailOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [viewing, setViewing] = useState<EmergencyAlert | null>(null);
+  const [editingItem, setEditingItem] = useState<Partial<EmergencyAlert> | null>(null);
 
   const handleStatusUpdate = (id: number, status: string) => {
     updateMutation.mutate({ id, data: { status } });
+  };
+
+  const openCreate = () => {
+    setEditingItem({ triggered_by: "Manual SOS", status: "active", patient_id: "" });
+    setIsEditing(false);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (e: EmergencyAlert) => {
+    setEditingItem({ ...e });
+    setIsEditing(true);
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!editingItem?.patient_id || !editingItem?.triggered_by) return;
+    if (isEditing && editingItem.id) {
+      updateMutation.mutate({ id: editingItem.id, data: editingItem }, { onSuccess: () => setDialogOpen(false) });
+    } else {
+      createMutation.mutate(editingItem, { onSuccess: () => setDialogOpen(false) });
+    }
   };
 
   const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
@@ -52,7 +78,7 @@ export default function EmergenciesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Emergencies" subtitle="Emergency response tracking">
+      <PageHeader title="Emergencies" subtitle="Emergency response tracking" actionLabel={hasEdit ? "Add Emergency" : undefined} onAction={hasEdit ? openCreate : undefined}>
         <ExportButton filename="emergencies" title="Emergencies Report" columns={[
           { key: "id", label: "ID" }, { key: "triggered_by", label: "Triggered By" }, { key: "status", label: "Status" },
           { key: "created_at", label: "Time" },
@@ -120,6 +146,11 @@ export default function EmergenciesPage() {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setViewing(e); setDetailOpen(true); }}>
                     <Eye className="h-4 w-4" />
                   </Button>
+                  {hasEdit && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => openEdit(e)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -182,6 +213,42 @@ export default function EmergenciesPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{isEditing ? "Edit Emergency" : "Add Emergency"}</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label>Patient <span className="text-destructive">*</span></Label>
+              <Select value={editingItem?.patient_id || ""} onValueChange={v => setEditingItem(prev => ({ ...prev!, patient_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select Patient..." /></SelectTrigger>
+                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Triggered By <span className="text-destructive">*</span></Label>
+              <Input value={editingItem?.triggered_by || ""} onChange={e => setEditingItem(prev => ({ ...prev!, triggered_by: e.target.value }))} placeholder="e.g. Manual SOS, Smart Watch" />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={editingItem?.status || "active"} onValueChange={v => setEditingItem(prev => ({ ...prev!, status: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Need Action</SelectItem>
+                  <SelectItem value="acknowledged">Acknowledged</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
+                {isEditing ? "Update" : "Create"} Emergency
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

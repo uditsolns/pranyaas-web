@@ -19,7 +19,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     tasks: "full",
     visits: "full",
     vitals: "view",
-    emergencies: "view",
+    emergencies: "full",
     reports: "full",
     settings: "full",
     events: "full",
