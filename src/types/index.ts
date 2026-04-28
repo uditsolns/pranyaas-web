@@ -131,6 +131,8 @@ export interface Task {
   priority: string;
   status: string;
   remark: string;
+  category?: string;
+  relative_id?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { Task, Patient, CareManager, ApiUser } from "@/types";
+import { Task, Patient, CareManager, ApiUser, Relative } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
@@ -13,6 +13,7 @@ import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { useApiList, useApiCreate, useApiUpdate, useApiDelete } from "@/hooks/useApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +24,7 @@ import { canEdit } from "@/lib/permissions";
 const emptyTask: Partial<Task> = {
   title: "", description: "", patient_id: "", care_manager_id: "",
   due_date: "", priority: "", status: "", remark: "",
-  created_by: "",
+  created_by: "", category: "Care Manager", relative_id: "",
 };
 
 export default function TasksPage() {
@@ -33,6 +34,7 @@ export default function TasksPage() {
   const { data: patients = [] } = useApiList<Patient>("patients", "/patients");
   const { data: cms = [] } = useApiList<CareManager>("care-managers", "/care-managers");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
+  const { data: relatives = [] } = useApiList<Relative>("relatives", "/relatives");
   const createMutation = useApiCreate<Task>("tasks", "/tasks", "Task");
   const updateMutation = useApiUpdate<Task>("tasks", "/tasks", "Task");
   const deleteMutation = useApiDelete("tasks", "/tasks", "Task");
@@ -44,11 +46,13 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("Care Manager");
 
   const filtered = tasks.filter(t => {
     const matchesSearch = (t.title || "").toLowerCase().includes(search.toLowerCase());
     const matchesStatus = filterStatus === "all" || t.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesTab = t.category === activeTab || (!t.category && activeTab === "Care Manager");
+    return matchesSearch && matchesStatus && matchesTab;
   });
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
@@ -58,6 +62,7 @@ export default function TasksPage() {
 
   const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
   const getCMName = (id: string) => cms.find(c => String(c.user_id) === String(id))?.name || `CM #${id}`;
+  const getRelativeName = (id: string) => relatives.find(r => String(r.id) === String(id))?.relative_name || `Relative #${id}`;
 
   const handleSave = () => {
     if (!editingTask?.title?.trim()) return;
@@ -97,6 +102,13 @@ export default function TasksPage() {
     <div className="space-y-6">
       <PageHeader title="Tasks" subtitle={`${total} total tasks`} actionLabel={hasEdit ? "Create Task" : undefined} onAction={hasEdit ? openCreate : undefined} />
 
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="Care Manager">Care Manager</TabsTrigger>
+          <TabsTrigger value="Relative">Relative</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -120,7 +132,7 @@ export default function TasksPage() {
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Task</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Patient</th>
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">Care Manager</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">{activeTab === "Care Manager" ? "Care Manager" : "Relative"}</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Due Date</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Priority</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Status</th>
@@ -134,7 +146,12 @@ export default function TasksPage() {
                 <tr key={t.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{t.title}</td>
                   <td className="p-4 text-sm text-foreground">{t.patient_id ? getPatientName(t.patient_id) : "—"}</td>
-                  <td className="p-4 text-sm text-foreground">{t.care_manager_id ? getCMName(t.care_manager_id) : "—"}</td>
+                  <td className="p-4 text-sm text-foreground">
+                    {t.category === "Relative" 
+                      ? (t.relative_id ? getRelativeName(t.relative_id) : "—")
+                      : (t.care_manager_id ? getCMName(t.care_manager_id) : "—")
+                    }
+                  </td>
                   <td className="p-4 text-sm text-foreground">{formatDate(t.due_date)}</td>
                   <td className="p-4"><StatusBadge status={t.priority || "1"} /></td>
                   <td className="p-4"><StatusBadge status={t.status || "pending"} /></td>
@@ -197,12 +214,39 @@ export default function TasksPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Care Manager</Label>
-              <Select value={editingTask?.care_manager_id || ""} onValueChange={v => updateField("care_manager_id", v)}>
+              <Label>Task Category <span className="text-destructive">*</span></Label>
+              <Select value={editingTask?.category || "Care Manager"} onValueChange={v => updateField("category", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{cms.map(cm => <SelectItem key={cm.id} value={String(cm.user_id)}>{cm.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  <SelectItem value="Care Manager">Care Manager</SelectItem>
+                  <SelectItem value="Relative">Relative</SelectItem>
+                </SelectContent>
               </Select>
             </div>
+            {editingTask?.category === "Relative" ? (
+              <div className="space-y-2">
+                <Label>Relative <span className="text-destructive">*</span></Label>
+                <Select value={editingTask?.relative_id || ""} onValueChange={v => updateField("relative_id", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select Relative..." /></SelectTrigger>
+                  <SelectContent>
+                    {relatives.filter(r => String(r.patient_id) === String(editingTask.patient_id)).map(r => (
+                      <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
+                    ))}
+                    {relatives.filter(r => String(r.patient_id) === String(editingTask.patient_id)).length === 0 && (
+                      <SelectItem value="none" disabled>No relatives found for this patient</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Care Manager</Label>
+                <Select value={editingTask?.care_manager_id || ""} onValueChange={v => updateField("care_manager_id", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectContent>{cms.map(cm => <SelectItem key={cm.id} value={String(cm.user_id)}>{cm.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Due Date</Label>
               <Input type="date" value={editingTask?.due_date || ""} onChange={e => updateField("due_date", e.target.value)} />
