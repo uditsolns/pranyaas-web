@@ -3,7 +3,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { Patient, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, Loader2, ShieldCheck, ExternalLink } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +47,7 @@ export default function PatientsPage() {
   const [filterRisk, setFilterRisk] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<PatientForm | null>(null);
+  const [kycApprovalTarget, setKycApprovalTarget] = useState<Patient | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const navigate = useNavigate();
 
@@ -166,6 +167,9 @@ export default function PatientsPage() {
                       <Tooltip><TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/patients/${p.id}`)}><Eye className="h-4 w-4" /></Button>
                       </TooltipTrigger><TooltipContent>View</TooltipContent></Tooltip>
+                      {hasEdit && <Tooltip><TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => setKycApprovalTarget(p)}><ShieldCheck className="h-4 w-4" /></Button>
+                      </TooltipTrigger><TooltipContent>Review KYC</TooltipContent></Tooltip>}
                       {hasEdit && <Tooltip><TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
                       </TooltipTrigger><TooltipContent>Edit</TooltipContent></Tooltip>}
@@ -321,18 +325,6 @@ export default function PatientsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>KYC Status</Label>
-              <Select value={editingPatient?.kyc_status || ""} onValueChange={v => updateField("kyc_status", v)}>
-                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Verified">Verified</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                  <SelectItem value="Not Started">Not Started</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Address</Label>
               <Input value={editingPatient?.address || ""} onChange={e => updateField("address", e.target.value)} />
@@ -375,6 +367,139 @@ export default function PatientsPage() {
       </Dialog>
 
       <DeleteConfirmDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)} onConfirm={handleDelete} title="Delete Patient?" description="This will permanently remove the patient record." />
+
+      <Dialog open={kycApprovalTarget !== null} onOpenChange={() => setKycApprovalTarget(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-blue-600" />
+              KYC Approval - {kycApprovalTarget?.full_name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Personal Information</h3>
+                <div className="grid grid-cols-2 gap-4 bg-secondary/10 p-4 rounded-lg border border-border/50">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Full Name</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.full_name || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">DOB / Age</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.dob || "—"} ({kycApprovalTarget?.age || "—"}y)</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Gender</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.gender || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Phone</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.user?.phone || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Blood Group</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.blood_group || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Primary Language</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.primary_language || "—"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[10px] text-muted-foreground uppercase">Address</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.address || "—"} {kycApprovalTarget?.landmark ? `(${kycApprovalTarget.landmark})` : ""}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">ID Details</h3>
+                <div className="grid grid-cols-2 gap-4 bg-secondary/10 p-4 rounded-lg border border-border/50">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">Aadhaar Number</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.aadhaar_no || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase">PAN Number</p>
+                    <p className="text-sm font-medium">{kycApprovalTarget?.pan_no || "—"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border/50">
+                <Label className="text-sm font-bold mb-3 block">Update KYC Status</Label>
+                <Select 
+                  value={kycApprovalTarget?.kyc_status || ""} 
+                  onValueChange={(status) => {
+                    if (kycApprovalTarget) {
+                      updateMutation.mutate(
+                        { id: kycApprovalTarget.id, data: { ...kycApprovalTarget, kyc_status: status } },
+                        { onSuccess: () => setKycApprovalTarget(prev => prev ? { ...prev, kyc_status: status } : null) }
+                      );
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Verified">Verified</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    <SelectItem value="Not Started">Not Started</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Uploaded Documents</h3>
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  { label: "Patient Photo", field: "patient_photo", folder: "patients" },
+                  { label: "Aadhaar Card", field: "aadhaar_photo", folder: "aadhaar" },
+                  { label: "PAN Card", field: "pan_photo", folder: "pan" },
+                  { label: "Insurance Policy", field: "insurance_policy_photo", folder: "insurance" },
+                ].map((doc) => {
+                  const filename = kycApprovalTarget?.[doc.field as keyof Patient] as string;
+                  const url = filename ? `https://uditsolutions.in/eldercare/storage/app/public/${doc.folder}/${filename}` : null;
+                  
+                  return (
+                    <div key={doc.label} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold">{doc.label}</Label>
+                        {url && (
+                          <a href={url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1">
+                            <ExternalLink className="h-3 w-3" /> View Full
+                          </a>
+                        )}
+                      </div>
+                      <div className="aspect-[16/9] rounded-lg border border-border/50 bg-secondary/5 overflow-hidden flex items-center justify-center relative group">
+                        {url ? (
+                          <img 
+                            src={url} 
+                            alt={doc.label} 
+                            className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105" 
+                            onClick={() => window.open(url, '_blank')}
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x225?text=Image+Not+Found'; }}
+                          />
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">No document uploaded</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end mt-8 pt-4 border-t border-border/50">
+            <Button variant="outline" onClick={() => setKycApprovalTarget(null)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -24,6 +24,7 @@ const emptyMedication: Partial<MedicationReminder> = {
   medicine_name: "",
   dosage: "",
   frequency: "",
+  medicine_type: "morning",
   start_date: "",
   end_date: "",
   status: "pending",
@@ -97,6 +98,7 @@ export default function MedicationRemindersPage() {
       >
         <ExportButton filename="medications" title="Medications Report" columns={[
           { key: "medicine_name", label: "Medicine" }, 
+          { key: "medicine_type", label: "Type" },
           { key: "dosage", label: "Dosage" }, 
           { key: "frequency", label: "Frequency" },
           { key: "start_date", label: "Start Date" }, 
@@ -117,6 +119,7 @@ export default function MedicationRemindersPage() {
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Patient</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Medicine</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Type</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Dosage / Freq</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Period</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Status</th>
@@ -125,11 +128,12 @@ export default function MedicationRemindersPage() {
             </thead>
             <tbody>
               {paged.length === 0 ? (
-                <tr><td colSpan={6}><EmptyState title="No medications found" icon={Pill} /></td></tr>
+                <tr><td colSpan={7}><EmptyState title="No medications found" icon={Pill} /></td></tr>
               ) : paged.map(m => (
                 <tr key={m.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{getPatientName(m.patient_id)}</td>
                   <td className="p-4 text-sm text-foreground">{m.medicine_name}</td>
+                  <td className="p-4 text-sm text-foreground capitalize">{m.medicine_type}</td>
                   <td className="p-4 text-sm text-foreground">{m.dosage} <span className="text-muted-foreground text-xs ml-1">({m.frequency})</span></td>
                   <td className="p-4 text-sm text-foreground">
                     <div className="text-xs">{formatDate(m.start_date)} to</div>
@@ -161,6 +165,7 @@ export default function MedicationRemindersPage() {
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewingItem.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingItem.status || "pending"} /></div>
                 <div><p className="text-xs text-muted-foreground">Medicine</p><p className="text-sm font-medium">{viewingItem.medicine_name}</p></div>
+                <div><p className="text-xs text-muted-foreground">Type</p><p className="text-sm font-medium capitalize">{viewingItem.medicine_type}</p></div>
                 <div><p className="text-xs text-muted-foreground">Dosage</p><p className="text-sm font-medium">{viewingItem.dosage}</p></div>
                 <div><p className="text-xs text-muted-foreground">Frequency</p><p className="text-sm font-medium">{viewingItem.frequency}</p></div>
                 <div><p className="text-xs text-muted-foreground">Period</p><p className="text-sm font-medium">{formatDate(viewingItem.start_date)} to {formatDate(viewingItem.end_date)}</p></div>
@@ -184,7 +189,7 @@ export default function MedicationRemindersPage() {
               <Select value={editingItem?.patient_id ? String(editingItem.patient_id) : ""} onValueChange={v => updateField("patient_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select patient..." /></SelectTrigger>
                 <SelectContent>
-                  {patients.map(p => <SelectItem key={p.id} value={String(p.user_id || p.id)}>{p.full_name}</SelectItem>)}
+                  {patients.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.full_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -201,6 +206,17 @@ export default function MedicationRemindersPage() {
                 <Label>Frequency</Label>
                 <Input value={editingItem?.frequency || ""} onChange={e => updateField("frequency", e.target.value)} placeholder="e.g. Twice a day" />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Medicine Type</Label>
+              <Select value={editingItem?.medicine_type || "morning"} onValueChange={v => updateField("medicine_type", v)}>
+                <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="morning">Morning</SelectItem>
+                  <SelectItem value="afternoon">Afternoon</SelectItem>
+                  <SelectItem value="night">Night</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

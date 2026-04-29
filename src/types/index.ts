@@ -372,6 +372,7 @@ export interface MedicationReminder {
   medicine_name: string;
   dosage: string;
   frequency: string;
+  medicine_type: string;
   start_date: string;
   end_date: string;
   status: string;
