@@ -123,6 +123,9 @@ export interface Patient {
   last_visit_date: string;
   kyc_status: string | null;
   care_manager_id: string;
+  patient_relatives_id: string | null;
+  medical_info_status: string | null;
+  patient_assestment_status: string | null;
   created_at: string;
   updated_at: string;
   user?: ApiUser;

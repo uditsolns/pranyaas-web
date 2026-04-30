@@ -190,11 +190,14 @@ export default function RelativesPage() {
             </div>
             <div className="space-y-2">
               <Label className={errors.patient_id ? "text-destructive" : ""}>Patient <span className="text-destructive">*</span></Label>
-              <Select value={editingItem?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
+              <Select 
+                value={editingItem?.patient_id ? (patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id))?.user_id || String(editingItem.patient_id)) : ""} 
+                onValueChange={v => updateField("patient_id", v)}
+              >
                 <SelectTrigger className={errors.patient_id ? "border-destructive focus:ring-destructive" : ""}>
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{patients.map(p => <SelectItem key={p.user_id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
               {errors.patient_id && <p className="text-[10px] text-destructive font-medium">{errors.patient_id}</p>}
             </div>

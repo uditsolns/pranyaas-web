@@ -186,10 +186,13 @@ export default function MedicationRemindersPage() {
           <div className="grid grid-cols-1 gap-4 mt-4">
             <div className="space-y-2">
               <Label>Patient <span className="text-destructive">*</span></Label>
-              <Select value={editingItem?.patient_id ? String(editingItem.patient_id) : ""} onValueChange={v => updateField("patient_id", v)}>
+              <Select 
+                value={editingItem?.patient_id ? (patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id))?.user_id || String(editingItem.patient_id)) : ""} 
+                onValueChange={v => updateField("patient_id", v)}
+              >
                 <SelectTrigger><SelectValue placeholder="Select patient..." /></SelectTrigger>
                 <SelectContent>
-                  {patients.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.full_name}</SelectItem>)}
+                  {patients.map(p => <SelectItem key={p.user_id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

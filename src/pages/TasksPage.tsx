@@ -118,6 +118,31 @@ export default function TasksPage() {
     setEditingTask(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
+  const handlePatientChange = (patientUserId: string) => {
+    const p = patients.find(p => String(p.user_id) === String(patientUserId));
+    setEditingTask(prev => {
+      if (!prev) return prev;
+      const updates: Partial<Task> = { ...prev, patient_id: patientUserId };
+      
+      if (p) {
+        // Auto-select Care Manager
+        const cm = cms.find(c => String(c.id) === String(p.care_manager_id) || String(c.user_id) === String(p.care_manager_id));
+        if (cm) updates.care_manager_id = String(cm.user_id);
+
+        // Auto-select Relative
+        const rel = relatives.find(r => 
+          String(r.id) === String(p.patient_relatives_id) || 
+          String(r.user_id) === String(p.patient_relatives_id) ||
+          String(r.patient_id) === String(p.id) ||
+          String(r.patient_id) === String(p.user_id)
+        );
+        if (rel) updates.relative_id = String(rel.id);
+      }
+      
+      return updates;
+    });
+  };
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   if (isError) return (
@@ -243,9 +268,12 @@ export default function TasksPage() {
             </div>
             <div className="space-y-2">
               <Label>Patient</Label>
-              <Select value={editingTask?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
+              <Select 
+                value={editingTask?.patient_id ? (patients.find(p => String(p.id) === String(editingTask.patient_id) || String(p.user_id) === String(editingTask.patient_id))?.user_id || String(editingTask.patient_id)) : ""} 
+                onValueChange={handlePatientChange}
+              >
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{patients.map(p => <SelectItem key={p.user_id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -264,12 +292,37 @@ export default function TasksPage() {
                 <Select value={editingTask?.relative_id || ""} onValueChange={v => updateField("relative_id", v)}>
                   <SelectTrigger><SelectValue placeholder="Select Relative..." /></SelectTrigger>
                   <SelectContent>
-                    {relatives.filter(r => String(r.patient_id) === String(editingTask.patient_id)).map(r => (
-                      <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
-                    ))}
-                    {relatives.filter(r => String(r.patient_id) === String(editingTask.patient_id)).length === 0 && (
-                      <SelectItem value="none" disabled>No relatives found for this patient</SelectItem>
-                    )}
+                    {(() => {
+                      const selectedPatient = patients.find(p => String(p.user_id) === String(editingTask?.patient_id));
+                      
+                      const patientRelatives = relatives.filter(r => 
+                        String(r.patient_id) === String(editingTask?.patient_id) || 
+                        (selectedPatient && String(r.patient_id) === String(selectedPatient.id)) ||
+                        (selectedPatient && String(r.user_id) === String(selectedPatient.patient_relatives_id))
+                      );
+
+                      // If patient has a relative_user but it's not in the filtered list, add it as a virtual option
+                      if (selectedPatient?.relative_user && !patientRelatives.some(r => String(r.user_id) === String(selectedPatient.relative_user?.id))) {
+                        return (
+                          <>
+                            <SelectItem key={`rel-user-${selectedPatient.relative_user.id}`} value={String(selectedPatient.patient_relatives_id || selectedPatient.relative_user.id)}>
+                              {selectedPatient.relative_user.name}
+                            </SelectItem>
+                            {patientRelatives.map(r => (
+                              <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
+                            ))}
+                          </>
+                        );
+                      }
+                      
+                      if (patientRelatives.length === 0) {
+                        return <SelectItem value="none" disabled>No relatives found for this patient</SelectItem>;
+                      }
+                      
+                      return patientRelatives.map(r => (
+                        <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
+                      ));
+                    })()}
                   </SelectContent>
                 </Select>
               </div>
