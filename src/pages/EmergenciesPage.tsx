@@ -32,6 +32,8 @@ export default function EmergenciesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [viewing, setViewing] = useState<EmergencyAlert | null>(null);
   const [editingItem, setEditingItem] = useState<Partial<EmergencyAlert> | null>(null);
+  const [relativesOpen, setRelativesOpen] = useState(false);
+  const [viewingContacts, setViewingContacts] = useState<any[]>([]);
 
   const handleStatusUpdate = (id: number, status: string) => {
     updateMutation.mutate({ id, data: { status } });
@@ -161,8 +163,23 @@ export default function EmergenciesPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Relative</p>
-                  <p className="text-sm font-semibold text-foreground">{e.patient?.relative?.name || "—"}</p>
-                  <p className="text-xs text-muted-foreground">{e.patient?.relative?.phone || "—"}</p>
+                  <p className="text-sm font-semibold text-foreground">{e.patient?.emergency_contacts?.[0]?.name || "—"}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-xs text-muted-foreground">{e.patient?.emergency_contacts?.[0]?.phone || "—"}</p>
+                    {(e.patient?.emergency_contacts?.length ?? 0) > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-5 px-1.5 text-primary bg-primary/5 hover:bg-black hover:text-white gap-1 rounded-md transition-all" 
+                        onClick={() => { setViewingContacts(e.patient?.emergency_contacts || []); setRelativesOpen(true); }}
+                      >
+                        {(e.patient?.emergency_contacts?.length ?? 0) > 1 && (
+                          <span className="text-[10px] font-bold">+{e.patient!.emergency_contacts!.length - 1} more</span>
+                        )}
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Created</p>
@@ -200,7 +217,20 @@ export default function EmergenciesPage() {
                 <div><p className="text-xs text-muted-foreground">Triggered By</p><p className="text-sm font-medium">{viewing.triggered_by}</p></div>
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewing.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewing.patient?.care_manager?.name || "—"} ({viewing.patient?.care_manager?.phone || "—"})</p></div>
-                <div><p className="text-xs text-muted-foreground">Relative</p><p className="text-sm font-medium">{viewing.patient?.relative?.name || "—"} ({viewing.patient?.relative?.phone || "—"})</p></div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Relative</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">
+                      {viewing.patient?.emergency_contacts?.[0]?.name || "—"} 
+                      {viewing.patient?.emergency_contacts?.[0]?.phone ? ` (${viewing.patient.emergency_contacts[0].phone})` : ""}
+                    </p>
+                    {(viewing.patient?.emergency_contacts?.length ?? 0) > 1 && (
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => { setViewingContacts(viewing.patient?.emergency_contacts || []); setRelativesOpen(true); }}>
+                        View All ({viewing.patient?.emergency_contacts?.length})
+                      </Button>
+                    )}
+                  </div>
+                </div>
                 <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{new Date(viewing.created_at).toLocaleString('en-GB')}</p></div>
                 {viewing.latitude && <div><p className="text-xs text-muted-foreground">Location</p><AddressDisplay lat={viewing.latitude} lon={viewing.longitude} /></div>}
               </div>
@@ -209,6 +239,46 @@ export default function EmergenciesPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={relativesOpen} onOpenChange={setRelativesOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Emergency Contacts</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-4">
+            {viewingContacts.map((c, i) => (
+              <div key={i} className="p-4 rounded-xl border border-border/50 bg-secondary/10">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-bold text-foreground">{c.name}</p>
+                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{c.relation}</span>
+                </div>
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <span className="w-12">Phone:</span>
+                    <span className="text-foreground font-medium">{c.phone}</span>
+                  </p>
+                  {c.email && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span className="w-12">Email:</span>
+                      <span className="text-foreground font-medium">{c.email}</span>
+                    </p>
+                  )}
+                  {c.address && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span className="w-12">Address:</span>
+                      <span className="text-foreground font-medium">{c.address}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {viewingContacts.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">No emergency contacts found.</p>
+            )}
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={() => setRelativesOpen(false)}>Close</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

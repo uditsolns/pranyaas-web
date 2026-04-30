@@ -253,11 +253,7 @@ export interface EmergencyAlert {
       name: string;
       phone: string;
     };
-    relative?: {
-      id: number;
-      name: string;
-      phone: string;
-    };
+    emergency_contacts?: EmergencyContact[];
   };
 }
 
