@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ExportButton } from "@/components/ExportButton";
 import { CareVisit, Patient, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -43,13 +43,31 @@ export default function VisitsPage() {
   const [viewingVisit, setViewingVisit] = useState<CareVisit | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  const filtered = visits.filter(v => {
-    const matchesSearch = (v.visit_type || "").toLowerCase().includes(search.toLowerCase()) ||
-      (v.notes || "").toLowerCase().includes(search.toLowerCase()) ||
-      getPatientName(v.patient_id).toLowerCase().includes(search.toLowerCase());
-    const matchesType = filterType === "all" || v.visit_type === filterType;
-    return matchesSearch && matchesType;
-  });
+  const getPatientName = (id: string | number) => {
+    if (!id) return "N/A";
+    const p = patients.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
+    return p?.full_name || `Patient #${id}`;
+  };
+
+  const getCMName = (id: string | number) => {
+    if (!id) return "N/A";
+    const c = cms.find(c => String(c.user_id) === String(id) || String(c.id) === String(id));
+    return c?.name || `CM #${id}`;
+  };
+
+  const filtered = useMemo(() => {
+    return visits.filter(v => {
+      const pName = getPatientName(v.patient_id);
+      const cmName = getCMName(v.care_manager_id);
+      const matchesSearch = 
+        (v.visit_type || "").toLowerCase().includes(search.toLowerCase()) ||
+        (v.notes || "").toLowerCase().includes(search.toLowerCase()) ||
+        pName.toLowerCase().includes(search.toLowerCase()) ||
+        cmName.toLowerCase().includes(search.toLowerCase());
+      const matchesType = filterType === "all" || v.visit_type === filterType;
+      return matchesSearch && matchesType;
+    });
+  }, [visits, patients, cms, search, filterType]);
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
@@ -75,8 +93,8 @@ export default function VisitsPage() {
     setEditingVisit(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
-  const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
-  const getCMName = (id: string) => cms.find(c => String(c.user_id) === String(id))?.name || `CM #${id}`;
+  // Helper functions moved above filtered useMemo
+
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 

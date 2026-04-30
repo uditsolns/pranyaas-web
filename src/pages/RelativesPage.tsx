@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { ExportButton } from "@/components/ExportButton";
 import { Relative, Patient } from "@/types";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ export default function RelativesPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<RelativeForm | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const filtered = relatives.filter(r =>
@@ -46,15 +48,59 @@ export default function RelativesPage() {
   );
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
-  const openCreate = () => { setEditingItem({ ...emptyRelative }); setDialogOpen(true); };
-  const openEdit = (r: Relative) => { setEditingItem({ ...r }); setDialogOpen(true); };
+  const openCreate = () => { setEditingItem({ ...emptyRelative }); setErrors({}); setDialogOpen(true); };
+  const openEdit = (r: Relative) => { setEditingItem({ ...r }); setErrors({}); setDialogOpen(true); };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!editingItem) return false;
+
+    if (!editingItem.relative_name?.trim()) newErrors.relative_name = "Relative Name is required";
+    if (!editingItem.patient_id) newErrors.patient_id = "Patient selection is required";
+    
+    if (!editingItem.id && (!editingItem.password || editingItem.password.length < 6)) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (editingItem.phone_number && !/^\d{10}$/.test(editingItem.phone_number)) {
+      newErrors.phone_number = "Phone number must be 10 digits";
+    }
+
+    if (editingItem.whatsapp_number && !/^\d{10}$/.test(editingItem.whatsapp_number)) {
+      newErrors.whatsapp_number = "WhatsApp number must be 10 digits";
+    }
+
+    if (editingItem.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editingItem.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (editingItem.aadhaar_no && !/^\d{12}$/.test(editingItem.aadhaar_no)) {
+      newErrors.aadhaar_no = "Aadhaar Number must be 12 digits";
+    }
+
+    if (editingItem.pan_no && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(editingItem.pan_no.toUpperCase())) {
+      newErrors.pan_no = "Invalid PAN format";
+    }
+
+    setErrors(newErrors);
+    const errorMessages = Object.values(newErrors);
+    if (errorMessages.length > 0) {
+      toast.error(errorMessages[0]);
+      return false;
+    }
+    return true;
+  };
 
   const handleSave = () => {
-    if (!editingItem?.relative_name?.trim()) return;
+    if (!validateForm()) return;
     if (editingItem.id) {
-      updateMutation.mutate({ id: editingItem.id, data: editingItem }, { onSuccess: () => setDialogOpen(false) });
+      updateMutation.mutate({ id: editingItem.id, data: editingItem }, { 
+        onSuccess: () => { setDialogOpen(false); toast.success("Relative updated successfully"); } 
+      });
     } else {
-      createMutation.mutate(editingItem as Partial<Relative>, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate(editingItem as Partial<Relative>, { 
+        onSuccess: () => { setDialogOpen(false); toast.success("Relative added successfully"); } 
+      });
     }
   };
 
@@ -65,6 +111,12 @@ export default function RelativesPage() {
   };
 
   const updateField = (field: string, value: string) => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
     setEditingItem(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
@@ -128,20 +180,34 @@ export default function RelativesPage() {
           <DialogHeader><DialogTitle>{editingItem?.id ? "Edit Relative" : "Add Relative"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
-              <Label>Relative Name <span className="text-destructive">*</span></Label>
-              <Input value={editingItem?.relative_name || ""} onChange={e => updateField("relative_name", e.target.value)} />
+              <Label className={errors.relative_name ? "text-destructive" : ""}>Relative Name <span className="text-destructive">*</span></Label>
+              <Input 
+                value={editingItem?.relative_name || ""} 
+                onChange={e => updateField("relative_name", e.target.value)} 
+                className={errors.relative_name ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.relative_name && <p className="text-[10px] text-destructive font-medium">{errors.relative_name}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Patient <span className="text-destructive">*</span></Label>
+              <Label className={errors.patient_id ? "text-destructive" : ""}>Patient <span className="text-destructive">*</span></Label>
               <Select value={editingItem?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectTrigger className={errors.patient_id ? "border-destructive focus:ring-destructive" : ""}>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
                 <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
+              {errors.patient_id && <p className="text-[10px] text-destructive font-medium">{errors.patient_id}</p>}
             </div>
             {!editingItem?.id && (
               <div className="space-y-2">
-                <Label>Password <span className="text-destructive">*</span></Label>
-                <Input type="password" value={editingItem?.password || ""} onChange={e => updateField("password", e.target.value)} />
+                <Label className={errors.password ? "text-destructive" : ""}>Password <span className="text-destructive">*</span></Label>
+                <Input 
+                  type="password" 
+                  value={editingItem?.password || ""} 
+                  onChange={e => updateField("password", e.target.value)} 
+                  className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                {errors.password && <p className="text-[10px] text-destructive font-medium">{errors.password}</p>}
               </div>
             )}
             <div className="space-y-2">
@@ -149,24 +215,50 @@ export default function RelativesPage() {
               <Input value={editingItem?.relationship || ""} onChange={e => updateField("relationship", e.target.value)} placeholder="e.g. Brother, Sister, Wife" />
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value={editingItem?.phone_number || ""} onChange={e => updateField("phone_number", e.target.value)} />
+              <Label className={errors.phone_number ? "text-destructive" : ""}>Phone</Label>
+              <Input 
+                value={editingItem?.phone_number || ""} 
+                onChange={e => updateField("phone_number", e.target.value)} 
+                className={errors.phone_number ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.phone_number && <p className="text-[10px] text-destructive font-medium">{errors.phone_number}</p>}
             </div>
             <div className="space-y-2">
-              <Label>WhatsApp</Label>
-              <Input value={editingItem?.whatsapp_number || ""} onChange={e => updateField("whatsapp_number", e.target.value)} />
+              <Label className={errors.whatsapp_number ? "text-destructive" : ""}>WhatsApp</Label>
+              <Input 
+                value={editingItem?.whatsapp_number || ""} 
+                onChange={e => updateField("whatsapp_number", e.target.value)} 
+                className={errors.whatsapp_number ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.whatsapp_number && <p className="text-[10px] text-destructive font-medium">{errors.whatsapp_number}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={editingItem?.email || ""} onChange={e => updateField("email", e.target.value)} />
+              <Label className={errors.email ? "text-destructive" : ""}>Email</Label>
+              <Input 
+                type="email" 
+                value={editingItem?.email || ""} 
+                onChange={e => updateField("email", e.target.value)} 
+                className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.email && <p className="text-[10px] text-destructive font-medium">{errors.email}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Aadhaar No</Label>
-              <Input value={editingItem?.aadhaar_no || ""} onChange={e => updateField("aadhaar_no", e.target.value)} />
+              <Label className={errors.aadhaar_no ? "text-destructive" : ""}>Aadhaar No</Label>
+              <Input 
+                value={editingItem?.aadhaar_no || ""} 
+                onChange={e => updateField("aadhaar_no", e.target.value)} 
+                className={errors.aadhaar_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.aadhaar_no && <p className="text-[10px] text-destructive font-medium">{errors.aadhaar_no}</p>}
             </div>
             <div className="space-y-2">
-              <Label>PAN No</Label>
-              <Input value={editingItem?.pan_no || ""} onChange={e => updateField("pan_no", e.target.value)} />
+              <Label className={errors.pan_no ? "text-destructive" : ""}>PAN No</Label>
+              <Input 
+                value={editingItem?.pan_no || ""} 
+                onChange={e => updateField("pan_no", e.target.value)} 
+                className={errors.pan_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.pan_no && <p className="text-[10px] text-destructive font-medium">{errors.pan_no}</p>}
             </div>
             <div className="space-y-2">
               <Label>Location</Label>

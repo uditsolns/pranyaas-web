@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { ExportButton } from "@/components/ExportButton";
 import { CareManager, ApiUser } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -44,6 +45,7 @@ export default function CareManagersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editingCM, setEditingCM] = useState<CMFormState | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [viewingCM, setViewingCM] = useState<CareManager | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
@@ -56,21 +58,61 @@ export default function CareManagersPage() {
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered, 9);
 
-  const openCreate = () => { setEditingCM({ ...emptyCM }); setDialogOpen(true); };
+  const openCreate = () => { setEditingCM({ ...emptyCM }); setErrors({}); setDialogOpen(true); };
   const openEdit = (cm: CareManager) => {
     setEditingCM({
       ...cm,
       phone: cm.user?.phone || "",
       email: cm.user?.email || ""
     });
+    setErrors({});
     setDialogOpen(true);
   };
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!editingCM) return false;
+
+    if (!editingCM.name?.trim()) newErrors.name = "Name is required";
+    
+    if (!editingCM.phone?.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\d{10}$/.test(editingCM.phone)) {
+      newErrors.phone = "Phone number must be 10 digits";
+    }
+
+    if (!editingCM.email?.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editingCM.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (!editingCM.id && (!editingCM.password || editingCM.password.length < 6)) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (editingCM.aadhaar_no && !/^\d{12}$/.test(editingCM.aadhaar_no)) {
+      newErrors.aadhaar_no = "Aadhaar Number must be 12 digits";
+    }
+
+    if (editingCM.pan_no && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(editingCM.pan_no.toUpperCase())) {
+      newErrors.pan_no = "Invalid PAN format";
+    }
+
+    setErrors(newErrors);
+    const errorMessages = Object.values(newErrors);
+    if (errorMessages.length > 0) {
+      toast.error(errorMessages[0]);
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = () => {
-    if (!editingCM?.name?.trim()) return;
+    if (!validateForm()) return;
     
     // Deconstruct and clean up the object for the API payload
-    const { id, user, created_at, updated_at, ...cmData } = editingCM as any;
+    const { id, user, created_at, updated_at, password, ...cmData } = editingCM as any;
     
     // Ensure numeric fields are cast correctly
     const sanitizedCM = {
@@ -79,9 +121,13 @@ export default function CareManagersPage() {
     };
 
     if (id) {
-      updateMutation.mutate({ id, data: sanitizedCM }, { onSuccess: () => setDialogOpen(false) });
+      updateMutation.mutate({ id, data: sanitizedCM }, { 
+        onSuccess: () => { setDialogOpen(false); toast.success("Care manager updated successfully"); } 
+      });
     } else {
-      createMutation.mutate(sanitizedCM, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate({ ...sanitizedCM, password: editingCM.password }, { 
+        onSuccess: () => { setDialogOpen(false); toast.success("Care manager added successfully"); } 
+      });
     }
   };
 
@@ -92,6 +138,12 @@ export default function CareManagersPage() {
   };
 
   const updateField = (field: keyof CMFormState, value: string) => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
     setEditingCM(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
@@ -201,30 +253,68 @@ export default function CareManagersPage() {
           <DialogHeader><DialogTitle>{editingCM?.id ? "Edit Care Manager" : "Add Care Manager"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
-              <Label>Name <span className="text-destructive">*</span></Label>
-              <Input value={editingCM?.name || ""} onChange={e => updateField("name", e.target.value)} placeholder="Full Name" />
+              <Label className={errors.name ? "text-destructive" : ""}>Name <span className="text-destructive">*</span></Label>
+              <Input 
+                value={editingCM?.name || ""} 
+                onChange={e => updateField("name", e.target.value)} 
+                placeholder="Full Name" 
+                className={errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.name && <p className="text-[10px] text-destructive font-medium">{errors.name}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Phone <span className="text-destructive">*</span></Label>
-              <Input value={editingCM?.phone || ""} onChange={e => updateField("phone", e.target.value)} placeholder="e.g. 9876543212" />
+              <Label className={errors.phone ? "text-destructive" : ""}>Phone <span className="text-destructive">*</span></Label>
+              <Input 
+                value={editingCM?.phone || ""} 
+                onChange={e => updateField("phone", e.target.value)} 
+                placeholder="e.g. 9876543212" 
+                className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.phone && <p className="text-[10px] text-destructive font-medium">{errors.phone}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Email <span className="text-destructive">*</span></Label>
-              <Input type="email" value={editingCM?.email || ""} onChange={e => updateField("email", e.target.value)} placeholder="e.g. raj@gmail.com" />
+              <Label className={errors.email ? "text-destructive" : ""}>Email <span className="text-destructive">*</span></Label>
+              <Input 
+                type="email" 
+                value={editingCM?.email || ""} 
+                onChange={e => updateField("email", e.target.value)} 
+                placeholder="e.g. raj@gmail.com" 
+                className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.email && <p className="text-[10px] text-destructive font-medium">{errors.email}</p>}
             </div>
             {!editingCM?.id && (
               <div className="space-y-2">
-                <Label>Password <span className="text-destructive">*</span></Label>
-                <Input type="password" value={editingCM?.password || ""} onChange={e => updateField("password", e.target.value)} placeholder="Minimum 6 characters" />
+                <Label className={errors.password ? "text-destructive" : ""}>Password <span className="text-destructive">*</span></Label>
+                <Input 
+                  type="password" 
+                  value={editingCM?.password || ""} 
+                  onChange={e => updateField("password", e.target.value)} 
+                  placeholder="Minimum 6 characters" 
+                  className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                {errors.password && <p className="text-[10px] text-destructive font-medium">{errors.password}</p>}
               </div>
             )}
             <div className="space-y-2">
-              <Label>Aadhaar No</Label>
-              <Input value={editingCM?.aadhaar_no || ""} onChange={e => updateField("aadhaar_no", e.target.value)} placeholder="e.g. 333344445555" />
+              <Label className={errors.aadhaar_no ? "text-destructive" : ""}>Aadhaar No</Label>
+              <Input 
+                value={editingCM?.aadhaar_no || ""} 
+                onChange={e => updateField("aadhaar_no", e.target.value)} 
+                placeholder="e.g. 333344445555" 
+                className={errors.aadhaar_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.aadhaar_no && <p className="text-[10px] text-destructive font-medium">{errors.aadhaar_no}</p>}
             </div>
             <div className="space-y-2">
-              <Label>PAN No</Label>
-              <Input value={editingCM?.pan_no || ""} onChange={e => updateField("pan_no", e.target.value)} placeholder="e.g. LMNO1234F" />
+              <Label className={errors.pan_no ? "text-destructive" : ""}>PAN No</Label>
+              <Input 
+                value={editingCM?.pan_no || ""} 
+                onChange={e => updateField("pan_no", e.target.value)} 
+                placeholder="e.g. LMNO1234F" 
+                className={errors.pan_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.pan_no && <p className="text-[10px] text-destructive font-medium">{errors.pan_no}</p>}
             </div>
             <div className="space-y-2">
               <Label>Qualification</Label>

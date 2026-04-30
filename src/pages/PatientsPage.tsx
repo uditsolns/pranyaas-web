@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { ExportButton } from "@/components/ExportButton";
 import { Patient, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -47,6 +48,7 @@ export default function PatientsPage() {
   const [filterRisk, setFilterRisk] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<PatientForm | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [kycApprovalTarget, setKycApprovalTarget] = useState<Patient | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -60,17 +62,82 @@ export default function PatientsPage() {
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
-  const openCreate = () => { setEditingPatient({ ...emptyPatient }); setDialogOpen(true); };
-  const openEdit = (p: Patient) => { setEditingPatient({ ...p, name: p.user?.name || p.full_name, email: p.user?.email || "", phone: p.user?.phone || "" }); setDialogOpen(true); };
+  const openCreate = () => { setEditingPatient({ ...emptyPatient }); setErrors({}); setDialogOpen(true); };
+  const openEdit = (p: Patient) => { 
+    setEditingPatient({ ...p, name: p.user?.name || p.full_name, email: p.user?.email || "", phone: p.user?.phone || "" }); 
+    setErrors({});
+    setDialogOpen(true); 
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!editingPatient) return false;
+
+    if (!editingPatient.full_name?.trim()) newErrors.full_name = "Full Name is required";
+    
+    if (!editingPatient.id) {
+      if (!editingPatient.name?.trim()) newErrors.name = "User Account Name is required";
+      if (!editingPatient.email?.trim()) {
+        newErrors.email = "Email is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editingPatient.email)) {
+        newErrors.email = "Invalid email format";
+      }
+      if (!editingPatient.phone?.trim()) {
+        newErrors.phone = "Phone number is required";
+      } else if (!/^\d{10}$/.test(editingPatient.phone)) {
+        newErrors.phone = "Phone number must be 10 digits";
+      }
+      if (!editingPatient.password?.trim()) {
+        newErrors.password = "Password is required";
+      } else if (editingPatient.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters";
+      }
+    } else {
+       if (editingPatient.phone && !/^\d{10}$/.test(editingPatient.phone)) {
+        newErrors.phone = "Phone number must be 10 digits";
+      }
+    }
+
+    if (editingPatient.aadhaar_no && !/^\d{12}$/.test(editingPatient.aadhaar_no)) {
+      newErrors.aadhaar_no = "Aadhaar Number must be 12 digits";
+    }
+
+    if (editingPatient.pan_no && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(editingPatient.pan_no.toUpperCase())) {
+      newErrors.pan_no = "Invalid PAN format";
+    }
+
+    if (editingPatient.dob) {
+      const birthDate = new Date(editingPatient.dob);
+      const today = new Date();
+      if (birthDate > today) {
+        newErrors.dob = "Date of Birth cannot be in the future";
+      }
+    }
+
+    if (editingPatient.weight && isNaN(Number(editingPatient.weight))) {
+      newErrors.weight = "Weight must be a number";
+    }
+    if (editingPatient.height && isNaN(Number(editingPatient.height))) {
+      newErrors.height = "Height must be a number";
+    }
+
+    setErrors(newErrors);
+    
+    const errorMessages = Object.values(newErrors);
+    if (errorMessages.length > 0) {
+      toast.error(errorMessages[0]);
+      return false;
+    }
+    return true;
+  };
 
   const handleSave = () => {
-    if (!editingPatient?.full_name?.trim()) return;
-    if (!editingPatient.id && (!editingPatient.name?.trim() || !editingPatient.email?.trim() || !editingPatient.phone?.trim())) return;
+    if (!validateForm()) return;
     const payload = { ...editingPatient };
     if (editingPatient.id) {
-      updateMutation.mutate({ id: editingPatient.id, data: payload }, { onSuccess: () => setDialogOpen(false) });
+      updateMutation.mutate({ id: editingPatient.id, data: payload }, { onSuccess: () => { setDialogOpen(false); toast.success("Patient updated successfully"); } });
     } else {
-      createMutation.mutate(payload, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate(payload, { onSuccess: () => { setDialogOpen(false); toast.success("Patient created successfully"); } });
     }
   };
 
@@ -81,7 +148,35 @@ export default function PatientsPage() {
   };
 
   const updateField = (field: string, value: string | number) => {
-    setEditingPatient(prev => prev ? { ...prev, [field]: value } : prev);
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+    setEditingPatient(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, [field]: value };
+      
+      if (field === "dob") {
+        if (value) {
+          const birthDate = new Date(value as string);
+          if (!isNaN(birthDate.getTime())) {
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            updated.age = Math.max(0, age).toString();
+          }
+        } else {
+          updated.age = "";
+        }
+      }
+      
+      return updated;
+    });
   };
 
   if (isLoading) return (
@@ -196,32 +291,68 @@ export default function PatientsPage() {
               <>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:col-span-2 pt-1">User Account</p>
                 <div className="space-y-2">
-                  <Label>Name <span className="text-destructive">*</span></Label>
-                  <Input value={editingPatient?.name || ""} onChange={e => updateField("name", e.target.value)} placeholder="Login display name" />
+                  <Label className={errors.name ? "text-destructive" : ""}>Name <span className="text-destructive">*</span></Label>
+                  <Input 
+                    value={editingPatient?.name || ""} 
+                    onChange={e => updateField("name", e.target.value)} 
+                    placeholder="Login display name" 
+                    className={errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {errors.name && <p className="text-[10px] text-destructive font-medium">{errors.name}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>Email <span className="text-destructive">*</span></Label>
-                  <Input type="email" value={editingPatient?.email || ""} onChange={e => updateField("email", e.target.value)} placeholder="user@example.com" />
+                  <Label className={errors.email ? "text-destructive" : ""}>Email <span className="text-destructive">*</span></Label>
+                  <Input 
+                    type="email" 
+                    value={editingPatient?.email || ""} 
+                    onChange={e => updateField("email", e.target.value)} 
+                    placeholder="user@example.com" 
+                    className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {errors.email && <p className="text-[10px] text-destructive font-medium">{errors.email}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>Phone <span className="text-destructive">*</span></Label>
-                  <Input value={editingPatient?.phone || ""} onChange={e => updateField("phone", e.target.value)} placeholder="9876543210" />
+                  <Label className={errors.phone ? "text-destructive" : ""}>Phone <span className="text-destructive">*</span></Label>
+                  <Input 
+                    value={editingPatient?.phone || ""} 
+                    onChange={e => updateField("phone", e.target.value)} 
+                    placeholder="9876543210" 
+                    className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {errors.phone && <p className="text-[10px] text-destructive font-medium">{errors.phone}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>Password <span className="text-destructive">*</span></Label>
-                  <Input type="password" value={editingPatient?.password || ""} onChange={e => updateField("password", e.target.value)} />
+                  <Label className={errors.password ? "text-destructive" : ""}>Password <span className="text-destructive">*</span></Label>
+                  <Input 
+                    type="password" 
+                    value={editingPatient?.password || ""} 
+                    onChange={e => updateField("password", e.target.value)} 
+                    className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {errors.password && <p className="text-[10px] text-destructive font-medium">{errors.password}</p>}
                 </div>
                 <div className="sm:col-span-2"><hr className="border-border/50" /></div>
               </>
             )}
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:col-span-2 pt-1">Patient Details</p>
             <div className="space-y-2">
-              <Label>Full Name <span className="text-destructive">*</span></Label>
-              <Input value={editingPatient?.full_name || ""} onChange={e => updateField("full_name", e.target.value)} />
+              <Label className={errors.full_name ? "text-destructive" : ""}>Full Name <span className="text-destructive">*</span></Label>
+              <Input 
+                value={editingPatient?.full_name || ""} 
+                onChange={e => updateField("full_name", e.target.value)} 
+                className={errors.full_name ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.full_name && <p className="text-[10px] text-destructive font-medium">{errors.full_name}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Date of Birth</Label>
-              <Input type="date" value={editingPatient?.dob || ""} onChange={e => updateField("dob", e.target.value)} />
+              <Label className={errors.dob ? "text-destructive" : ""}>Date of Birth</Label>
+              <Input 
+                type="date" 
+                value={editingPatient?.dob || ""} 
+                onChange={e => updateField("dob", e.target.value)} 
+                className={errors.dob ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.dob && <p className="text-[10px] text-destructive font-medium">{errors.dob}</p>}
             </div>
             <div className="space-y-2">
               <Label>Age</Label>
@@ -250,12 +381,22 @@ export default function PatientsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Aadhaar No</Label>
-              <Input value={editingPatient?.aadhaar_no || ""} onChange={e => updateField("aadhaar_no", e.target.value)} />
+              <Label className={errors.aadhaar_no ? "text-destructive" : ""}>Aadhaar No</Label>
+              <Input 
+                value={editingPatient?.aadhaar_no || ""} 
+                onChange={e => updateField("aadhaar_no", e.target.value)} 
+                className={errors.aadhaar_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.aadhaar_no && <p className="text-[10px] text-destructive font-medium">{errors.aadhaar_no}</p>}
             </div>
             <div className="space-y-2">
-              <Label>PAN No</Label>
-              <Input value={editingPatient?.pan_no || ""} onChange={e => updateField("pan_no", e.target.value)} />
+              <Label className={errors.pan_no ? "text-destructive" : ""}>PAN No</Label>
+              <Input 
+                value={editingPatient?.pan_no || ""} 
+                onChange={e => updateField("pan_no", e.target.value)} 
+                className={errors.pan_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.pan_no && <p className="text-[10px] text-destructive font-medium">{errors.pan_no}</p>}
             </div>
             <div className="space-y-2">
               <Label>Primary Language</Label>
@@ -334,12 +475,22 @@ export default function PatientsPage() {
               <Input value={editingPatient?.landmark || ""} onChange={e => updateField("landmark", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Weight</Label>
-              <Input value={editingPatient?.weight || ""} onChange={e => updateField("weight", e.target.value)} />
+              <Label className={errors.weight ? "text-destructive" : ""}>Weight</Label>
+              <Input 
+                value={editingPatient?.weight || ""} 
+                onChange={e => updateField("weight", e.target.value)} 
+                className={errors.weight ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.weight && <p className="text-[10px] text-destructive font-medium">{errors.weight}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Height</Label>
-              <Input value={editingPatient?.height || ""} onChange={e => updateField("height", e.target.value)} />
+              <Label className={errors.height ? "text-destructive" : ""}>Height</Label>
+              <Input 
+                value={editingPatient?.height || ""} 
+                onChange={e => updateField("height", e.target.value)} 
+                className={errors.height ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.height && <p className="text-[10px] text-destructive font-medium">{errors.height}</p>}
             </div>
             <div className="space-y-2">
               <Label>Insurance Policy Name</Label>

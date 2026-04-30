@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ExportButton } from "@/components/ExportButton";
 import { Task, Patient, CareManager, ApiUser, Relative } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -48,21 +48,46 @@ export default function TasksPage() {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("Care Manager");
 
-  const filtered = tasks.filter(t => {
-    const matchesSearch = (t.title || "").toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = filterStatus === "all" || t.status === filterStatus;
-    const matchesTab = t.category === activeTab || (!t.category && activeTab === "Care Manager");
-    return matchesSearch && matchesStatus && matchesTab;
-  });
+  const getPatientName = (id: string | number) => {
+    if (!id) return "N/A";
+    const p = patients.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
+    return p?.full_name || `Patient #${id}`;
+  };
+
+  const getCMName = (id: string | number) => {
+    if (!id) return "N/A";
+    const c = cms.find(c => String(c.user_id) === String(id) || String(c.id) === String(id));
+    return c?.name || `CM #${id}`;
+  };
+
+  const getRelativeName = (id: string | number) => {
+    if (!id) return "N/A";
+    const r = relatives.find(r => String(r.id) === String(id));
+    return r?.relative_name || `Relative #${id}`;
+  };
+
+  const filtered = useMemo(() => {
+    return tasks.filter(t => {
+      const pName = t.patient_id ? getPatientName(t.patient_id) : "";
+      const cmName = t.care_manager_id ? getCMName(t.care_manager_id) : "";
+      const relName = t.relative_id ? getRelativeName(t.relative_id) : "";
+      
+      const matchesSearch = 
+        (t.title || "").toLowerCase().includes(search.toLowerCase()) ||
+        pName.toLowerCase().includes(search.toLowerCase()) ||
+        cmName.toLowerCase().includes(search.toLowerCase()) ||
+        relName.toLowerCase().includes(search.toLowerCase());
+        
+      const matchesStatus = filterStatus === "all" || t.status === filterStatus;
+      const matchesTab = t.category === activeTab || (!t.category && activeTab === "Care Manager");
+      return matchesSearch && matchesStatus && matchesTab;
+    });
+  }, [tasks, search, filterStatus, activeTab, patients, cms, relatives]);
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
   const openCreate = () => { setEditingTask({ ...emptyTask }); setDialogOpen(true); };
   const openEdit = (t: Task) => { setEditingTask({ ...t }); setDialogOpen(true); };
-
-  const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
-  const getCMName = (id: string) => cms.find(c => String(c.user_id) === String(id))?.name || `CM #${id}`;
-  const getRelativeName = (id: string) => relatives.find(r => String(r.id) === String(id))?.relative_name || `Relative #${id}`;
 
   const handleSave = () => {
     if (!editingTask?.title?.trim()) return;

@@ -45,6 +45,7 @@ export default function EventsPage() {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = events.filter(e => {
@@ -186,7 +187,17 @@ export default function EventsPage() {
                 <tr key={e.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4">
                     {e.banner_image ? (
-                      <img src={getStorageUrl(e.banner_image)!} alt={e.event_name} className="h-10 w-16 object-cover rounded" />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <img 
+                            src={getStorageUrl(e.banner_image)!} 
+                            alt={e.event_name} 
+                            className="h-10 w-16 object-cover rounded cursor-pointer hover:ring-2 hover:ring-primary transition-all" 
+                            onClick={() => setPreviewImage(getStorageUrl(e.banner_image)!)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>Click to view full size</TooltipContent>
+                      </Tooltip>
                     ) : (
                       <div className="h-10 w-16 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">No img</div>
                     )}
@@ -218,7 +229,17 @@ export default function EventsPage() {
           {viewingEvent && (
             <div className="space-y-4 mt-2">
               {viewingEvent.banner_image && (
-                <img src={getStorageUrl(viewingEvent.banner_image)!} alt={viewingEvent.event_name} className="w-full h-40 object-cover rounded-lg" />
+                <div className="relative group">
+                  <img 
+                    src={getStorageUrl(viewingEvent.banner_image)!} 
+                    alt={viewingEvent.event_name} 
+                    className="w-full h-40 object-cover rounded-lg cursor-pointer transition-opacity group-hover:opacity-90" 
+                    onClick={() => setPreviewImage(getStorageUrl(viewingEvent.banner_image)!)}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <Button variant="secondary" size="sm" className="shadow-lg">View Full Size</Button>
+                  </div>
+                </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Event Name</p><p className="text-sm font-medium">{viewingEvent.event_name}</p></div>
@@ -336,6 +357,23 @@ export default function EventsPage() {
       </Dialog>
 
       <DeleteConfirmDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)} onConfirm={handleDelete} title="Delete Event?" />
+
+      {/* Full Size Image Preview */}
+      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-none shadow-none">
+          <div className="relative flex items-center justify-center min-h-[50vh]">
+            <img src={previewImage!} alt="Preview" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute top-2 right-2 text-white bg-black/50 hover:bg-black/70 rounded-full h-8 w-8"
+              onClick={() => setPreviewImage(null)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

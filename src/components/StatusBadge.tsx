@@ -29,6 +29,8 @@ const statusColors: Record<string, string> = {
 };
 
 export function StatusBadge({ status }: { status: StatusType }) {
+  if (!status) return <span className="bg-muted text-muted-foreground inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">—</span>;
+  
   // Try exact match, then title case, then first match in a case-insensitive way
   const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   const colorClass = statusColors[status] || statusColors[normalizedStatus] || 

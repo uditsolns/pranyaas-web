@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { ExportButton } from "@/components/ExportButton";
 import { Vendor } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -38,6 +39,7 @@ export default function VendorsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<Vendor> | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [viewingItem, setViewingItem] = useState<Vendor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -49,11 +51,42 @@ export default function VendorsPage() {
   );
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
-  const openCreate = () => { setEditingItem({ ...emptyVendor }); setDialogOpen(true); };
-  const openEdit = (v: Vendor) => { setEditingItem({ ...v }); setDialogOpen(true); };
+  const openCreate = () => { setEditingItem({ ...emptyVendor }); setErrors({}); setDialogOpen(true); };
+  const openEdit = (v: Vendor) => { setEditingItem({ ...v }); setErrors({}); setDialogOpen(true); };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!editingItem) return false;
+
+    if (!editingItem.vendor_name?.trim()) newErrors.vendor_name = "Vendor Name is required";
+    
+    if (editingItem.mobile && !/^\d{10}$/.test(editingItem.mobile)) {
+      newErrors.mobile = "Mobile number must be 10 digits";
+    }
+
+    if (editingItem.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editingItem.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (editingItem.adhar_no && !/^\d{12}$/.test(editingItem.adhar_no)) {
+      newErrors.adhar_no = "Aadhaar Number must be 12 digits";
+    }
+
+    if (editingItem.pan_no && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(editingItem.pan_no.toUpperCase())) {
+      newErrors.pan_no = "Invalid PAN format";
+    }
+
+    setErrors(newErrors);
+    const errorMessages = Object.values(newErrors);
+    if (errorMessages.length > 0) {
+      toast.error(errorMessages[0]);
+      return false;
+    }
+    return true;
+  };
 
   const handleSave = () => {
-    if (!editingItem?.vendor_name?.trim()) return;
+    if (!validateForm()) return;
     
     // Deconstruct and clean up the object for the API payload
     const { id, created_at, updated_at, ...vData } = editingItem as any;
@@ -68,9 +101,13 @@ export default function VendorsPage() {
     };
 
     if (id) {
-      updateMutation.mutate({ id, data: sanitizedVendor }, { onSuccess: () => setDialogOpen(false) });
+      updateMutation.mutate({ id, data: sanitizedVendor }, { 
+        onSuccess: () => { setDialogOpen(false); toast.success("Vendor updated successfully"); } 
+      });
     } else {
-      createMutation.mutate(sanitizedVendor, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate(sanitizedVendor, { 
+        onSuccess: () => { setDialogOpen(false); toast.success("Vendor added successfully"); } 
+      });
     }
   };
 
@@ -81,6 +118,12 @@ export default function VendorsPage() {
   };
 
   const updateField = (field: keyof Vendor, value: string) => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
     setEditingItem(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
@@ -174,20 +217,39 @@ export default function VendorsPage() {
           <DialogHeader><DialogTitle>{editingItem?.id ? "Edit Vendor" : "Add Vendor"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
-              <Label>Vendor Name <span className="text-destructive">*</span></Label>
-              <Input value={editingItem?.vendor_name || ""} onChange={e => updateField("vendor_name", e.target.value)} placeholder="Full Name" />
+              <Label className={errors.vendor_name ? "text-destructive" : ""}>Vendor Name <span className="text-destructive">*</span></Label>
+              <Input 
+                value={editingItem?.vendor_name || ""} 
+                onChange={e => updateField("vendor_name", e.target.value)} 
+                placeholder="Full Name" 
+                className={errors.vendor_name ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.vendor_name && <p className="text-[10px] text-destructive font-medium">{errors.vendor_name}</p>}
             </div>
             <div className="space-y-2">
               <Label>Company Name</Label>
               <Input value={editingItem?.company_name || ""} onChange={e => updateField("company_name", e.target.value)} placeholder="Company Name" />
             </div>
             <div className="space-y-2">
-              <Label>Mobile</Label>
-              <Input value={editingItem?.mobile || ""} onChange={e => updateField("mobile", e.target.value)} placeholder="e.g. 9846878785" />
+              <Label className={errors.mobile ? "text-destructive" : ""}>Mobile</Label>
+              <Input 
+                value={editingItem?.mobile || ""} 
+                onChange={e => updateField("mobile", e.target.value)} 
+                placeholder="e.g. 9846878785" 
+                className={errors.mobile ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.mobile && <p className="text-[10px] text-destructive font-medium">{errors.mobile}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
-              <Input type="email" value={editingItem?.email || ""} onChange={e => updateField("email", e.target.value)} placeholder="e.g. vendor@gmail.com" />
+              <Label className={errors.email ? "text-destructive" : ""}>Email</Label>
+              <Input 
+                type="email" 
+                value={editingItem?.email || ""} 
+                onChange={e => updateField("email", e.target.value)} 
+                placeholder="e.g. vendor@gmail.com" 
+                className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.email && <p className="text-[10px] text-destructive font-medium">{errors.email}</p>}
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Address</Label>
@@ -239,12 +301,24 @@ export default function VendorsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Aadhaar No</Label>
-              <Input value={editingItem?.adhar_no || ""} onChange={e => updateField("adhar_no", e.target.value)} placeholder="e.g. 123456789012" />
+              <Label className={errors.adhar_no ? "text-destructive" : ""}>Aadhaar No</Label>
+              <Input 
+                value={editingItem?.adhar_no || ""} 
+                onChange={e => updateField("adhar_no", e.target.value)} 
+                placeholder="e.g. 123456789012" 
+                className={errors.adhar_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.adhar_no && <p className="text-[10px] text-destructive font-medium">{errors.adhar_no}</p>}
             </div>
             <div className="space-y-2">
-              <Label>PAN No</Label>
-              <Input value={editingItem?.pan_no || ""} onChange={e => updateField("pan_no", e.target.value)} placeholder="e.g. ABCDE1234F" />
+              <Label className={errors.pan_no ? "text-destructive" : ""}>PAN No</Label>
+              <Input 
+                value={editingItem?.pan_no || ""} 
+                onChange={e => updateField("pan_no", e.target.value)} 
+                placeholder="e.g. ABCDE1234F" 
+                className={errors.pan_no ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              {errors.pan_no && <p className="text-[10px] text-destructive font-medium">{errors.pan_no}</p>}
             </div>
             <div className="space-y-2">
               <Label>Coverage Area</Label>
