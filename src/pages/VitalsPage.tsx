@@ -129,7 +129,13 @@ export default function VitalsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2 sm:col-span-2">
               <Label>Patient <span className="text-destructive">*</span></Label>
-              <Select value={editingVital?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
+              <Select 
+                value={editingVital?.patient_id ? (() => {
+                  const p = patients.find(p => String(p.id) === String(editingVital.patient_id) || String(p.user_id) === String(editingVital.patient_id));
+                  return p ? String(p.user_id) : String(editingVital.patient_id);
+                })() : ""} 
+                onValueChange={v => updateField("patient_id", v)}
+              >
                 <SelectTrigger><SelectValue placeholder="Select patient..." /></SelectTrigger>
                 <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>

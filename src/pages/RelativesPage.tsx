@@ -191,7 +191,10 @@ export default function RelativesPage() {
             <div className="space-y-2">
               <Label className={errors.patient_id ? "text-destructive" : ""}>Patient <span className="text-destructive">*</span></Label>
               <Select 
-                value={editingItem?.patient_id ? (patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id))?.user_id || String(editingItem.patient_id)) : ""} 
+                value={editingItem?.patient_id ? (() => {
+                  const p = patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
+                  return p ? String(p.user_id) : String(editingItem.patient_id);
+                })() : ""} 
                 onValueChange={v => updateField("patient_id", v)}
               >
                 <SelectTrigger className={errors.patient_id ? "border-destructive focus:ring-destructive" : ""}>
