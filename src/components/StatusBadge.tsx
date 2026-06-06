@@ -31,10 +31,13 @@ const statusColors: Record<string, string> = {
 export function StatusBadge({ status }: { status: StatusType }) {
   if (!status) return <span className="bg-muted text-muted-foreground inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">—</span>;
   
+  // Convert to string to handle numeric status safely
+  const statusStr = String(status);
+  
   // Try exact match, then title case, then first match in a case-insensitive way
-  const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  const colorClass = statusColors[status] || statusColors[normalizedStatus] || 
-    Object.entries(statusColors).find(([key]) => key.toLowerCase() === status.toLowerCase())?.[1] || 
+  const normalizedStatus = statusStr.charAt(0).toUpperCase() + statusStr.slice(1).toLowerCase();
+  const colorClass = statusColors[statusStr] || statusColors[normalizedStatus] || 
+    Object.entries(statusColors).find(([key]) => key.toLowerCase() === statusStr.toLowerCase())?.[1] || 
     "bg-muted text-muted-foreground";
 
   return (
@@ -42,7 +45,7 @@ export function StatusBadge({ status }: { status: StatusType }) {
       "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
       colorClass
     )}>
-      {status}
+      {statusStr}
     </span>
   );
 }

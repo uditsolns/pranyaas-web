@@ -269,11 +269,14 @@ export default function TasksPage() {
             <div className="space-y-2">
               <Label>Patient</Label>
               <Select 
-                value={editingTask?.patient_id ? (patients.find(p => String(p.id) === String(editingTask.patient_id) || String(p.user_id) === String(editingTask.patient_id))?.user_id || String(editingTask.patient_id)) : ""} 
+                value={editingTask?.patient_id ? (() => {
+                  const p = patients.find(p => String(p.id) === String(editingTask.patient_id) || String(p.user_id) === String(editingTask.patient_id));
+                  return p ? String(p.user_id) : String(editingTask.patient_id);
+                })() : ""} 
                 onValueChange={handlePatientChange}
               >
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.user_id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

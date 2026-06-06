@@ -288,7 +288,13 @@ export default function EmergenciesPage() {
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label>Patient <span className="text-destructive">*</span></Label>
-              <Select value={editingItem?.patient_id || ""} onValueChange={v => setEditingItem(prev => ({ ...prev!, patient_id: v }))}>
+              <Select 
+                value={editingItem?.patient_id ? (() => {
+                  const p = patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
+                  return p ? String(p.user_id) : String(editingItem.patient_id);
+                })() : ""} 
+                onValueChange={v => setEditingItem(prev => ({ ...prev!, patient_id: v }))}
+              >
                 <SelectTrigger><SelectValue placeholder="Select Patient..." /></SelectTrigger>
                 <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
@@ -296,6 +302,16 @@ export default function EmergenciesPage() {
             <div className="space-y-2">
               <Label>Triggered By <span className="text-destructive">*</span></Label>
               <Input value={editingItem?.triggered_by || ""} onChange={e => setEditingItem(prev => ({ ...prev!, triggered_by: e.target.value }))} placeholder="e.g. Manual SOS, Smart Watch" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Latitude <span className="text-destructive">*</span></Label>
+                <Input type="number" step="any" value={editingItem?.latitude || ""} onChange={e => setEditingItem(prev => ({ ...prev!, latitude: e.target.value }))} placeholder="e.g. 19.0760" />
+              </div>
+              <div className="space-y-2">
+                <Label>Longitude <span className="text-destructive">*</span></Label>
+                <Input type="number" step="any" value={editingItem?.longitude || ""} onChange={e => setEditingItem(prev => ({ ...prev!, longitude: e.target.value }))} placeholder="e.g. 72.8777" />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
