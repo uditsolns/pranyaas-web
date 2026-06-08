@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://13.126.72.240/pranyaas/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://uditsolutions.in/eldercare/public/api";
 
 export function getToken(): string | null {
   return localStorage.getItem("auth_token");
@@ -47,7 +47,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return json as T;
 }
 
-export const STORAGE_BASE_URL = "http://13.126.72.240/storage/events/";
+export const STORAGE_BASE_URL = "https://uditsolutions.in/eldercare/storage/app/public/events/";
 
 export function getStorageUrl(path: string | null): string | null {
   if (!path) return null;

@@ -1161,7 +1161,7 @@ export default function PatientsPage() {
                     doc.field as keyof Patient
                   ] as string;
                   const url = filename
-                    ? `http://13.126.72.240/storage/${doc.folder}/${filename}`
+                    ? `https://uditsolutions.in/eldercare/storage/app/public/${doc.folder}/${filename}`
                     : null;
 
                   return (
