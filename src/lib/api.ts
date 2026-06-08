@@ -47,7 +47,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return json as T;
 }
 
-export const STORAGE_BASE_URL = "https://uditsolutions.in/eldercare/storage/app/public/events/";
+export const STORAGE_BASE_URL = "http://13.126.72.240/storage/events/";
 
 export function getStorageUrl(path: string | null): string | null {
   if (!path) return null;
