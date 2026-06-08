@@ -5,9 +5,9 @@ import App from "./App.tsx";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
-  <BrowserRouter basename="/Pranyaas">
+  <BrowserRouter basename="/pranyaas_aws_aws">
     <AuthProvider>
       <App />
     </AuthProvider>
-  </BrowserRouter>
+  </BrowserRouter>,
 );
