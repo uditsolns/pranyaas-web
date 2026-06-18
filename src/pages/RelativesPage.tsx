@@ -18,10 +18,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 
-type RelativeForm = Partial<Relative> & { password?: string };
+type RelativeForm = Partial<Relative> & { password?: string; patients?: any[] };
 
 const emptyRelative: RelativeForm = {
-  relative_name: "", patient_id: "", password: "", relationship: "", location_type: "",
+  relative_name: "", patients: [], password: "", relationship: "", location_type: "",
   country: "India", phone_number: "", whatsapp_number: "", email: "",
   aadhaar_no: "", pan_no: "", preferred_update_mode: "",
   secondary_escalation_contact: "",
@@ -49,14 +49,31 @@ export default function RelativesPage() {
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
   const openCreate = () => { setEditingItem({ ...emptyRelative }); setErrors({}); setDialogOpen(true); };
-  const openEdit = (r: Relative) => { setEditingItem({ ...r }); setErrors({}); setDialogOpen(true); };
+  const openEdit = (r: Relative) => { 
+    const mappedPatients = r.patients ? r.patients.map(p => ({
+      user_id: String(p.user_id),
+      patient_id: String(p.patient_id),
+      patient_name: p.patient_name || p.patient?.full_name || `Patient #${p.patient_id}`
+    })) : [];
+    
+    if (r.patient_id && !mappedPatients.some(mp => mp.patient_id === String(r.patient_id))) {
+      const p = patients.find(pat => String(pat.id) === String(r.patient_id) || String(pat.user_id) === String(r.patient_id));
+      if (p) {
+        mappedPatients.push({ user_id: String(p.user_id), patient_id: String(p.id), patient_name: p.full_name });
+      }
+    }
+
+    setEditingItem({ ...r, patients: mappedPatients }); 
+    setErrors({}); 
+    setDialogOpen(true); 
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!editingItem) return false;
 
     if (!editingItem.relative_name?.trim()) newErrors.relative_name = "Relative Name is required";
-    if (!editingItem.patient_id) newErrors.patient_id = "Patient selection is required";
+    if (!editingItem.patients || editingItem.patients.length === 0) newErrors.patients = "At least one patient must be selected";
     
     if (!editingItem.id && (!editingItem.password || editingItem.password.length < 6)) {
       newErrors.password = "Password must be at least 6 characters";
@@ -110,7 +127,7 @@ export default function RelativesPage() {
     }
   };
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: any) => {
     setErrors(prev => {
       if (!prev[field]) return prev;
       const next = { ...prev };
@@ -156,7 +173,12 @@ export default function RelativesPage() {
               ) : paged.map(r => (
                 <tr key={r.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{r.relative_name}</td>
-                  <td className="p-4 text-sm text-foreground">{r.patient?.full_name || `Patient #${r.patient_id}`}</td>
+                  <td className="p-4 text-sm text-foreground">
+                    {r.patients && r.patients.length > 0 
+                      ? r.patients.map(p => p.patient_name || `Patient #${p.patient_id}`).join(", ") 
+                      : (r.patient?.full_name || `Patient #${r.patient_id}`)
+                    }
+                  </td>
                   <td className="p-4 text-sm text-foreground">{r.relationship}</td>
                   <td className="p-4 text-sm text-foreground">{r.location_type} {r.country ? `(${r.country})` : ""}</td>
                   <td className="p-4 text-sm text-foreground">{r.phone_number}</td>
@@ -189,20 +211,52 @@ export default function RelativesPage() {
               {errors.relative_name && <p className="text-[10px] text-destructive font-medium">{errors.relative_name}</p>}
             </div>
             <div className="space-y-2">
-              <Label className={errors.patient_id ? "text-destructive" : ""}>Patient <span className="text-destructive">*</span></Label>
+              <Label className={errors.patients ? "text-destructive" : ""}>Patients <span className="text-destructive">*</span></Label>
+              
+              {editingItem?.patients && editingItem.patients.length > 0 && (
+                <div className="flex flex-col gap-2 mb-2">
+                  {editingItem.patients.map((p, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-secondary/30 px-3 py-2 rounded-md">
+                      <span className="text-sm font-medium">{p.patient_name}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                        const newPatients = [...(editingItem.patients || [])];
+                        newPatients.splice(idx, 1);
+                        updateField("patients", newPatients);
+                      }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <Select 
-                value={editingItem?.patient_id ? (() => {
-                  const p = patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
-                  return p ? String(p.user_id) : String(editingItem.patient_id);
-                })() : ""} 
-                onValueChange={v => updateField("patient_id", v)}
+                value="" 
+                onValueChange={v => {
+                  const p = patients.find(patient => String(patient.user_id) === String(v));
+                  if (p) {
+                    const currentPatients = editingItem?.patients || [];
+                    if (!currentPatients.some(cp => String(cp.user_id) === String(p.user_id))) {
+                      const newPatient = {
+                        user_id: String(p.user_id),
+                        patient_id: String(p.id),
+                        patient_name: p.full_name
+                      };
+                      updateField("patients", [...currentPatients, newPatient]);
+                    }
+                  }
+                }}
               >
-                <SelectTrigger className={errors.patient_id ? "border-destructive focus:ring-destructive" : ""}>
-                  <SelectValue placeholder="Select..." />
+                <SelectTrigger className={errors.patients ? "border-destructive focus:ring-destructive" : ""}>
+                  <SelectValue placeholder="Add Patient..." />
                 </SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.user_id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {patients.filter(p => !editingItem?.patients?.some(cp => String(cp.user_id) === String(p.user_id))).map(p => (
+                    <SelectItem key={p.user_id} value={String(p.user_id)}>{p.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
-              {errors.patient_id && <p className="text-[10px] text-destructive font-medium">{errors.patient_id}</p>}
+              {errors.patients && <p className="text-[10px] text-destructive font-medium">{errors.patients}</p>}
             </div>
             {!editingItem?.id && (
               <div className="space-y-2">

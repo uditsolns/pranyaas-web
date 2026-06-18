@@ -191,6 +191,14 @@ export interface Relative {
   updated_at: string;
   patient?: Patient;
   user?: ApiUser;
+  patients?: {
+    id?: number;
+    relative_id?: string;
+    user_id: string;
+    patient_id: string;
+    patient_name: string;
+    patient?: Patient;
+  }[];
 }
 
 export interface CareVisit {
