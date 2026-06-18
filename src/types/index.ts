@@ -218,6 +218,7 @@ export interface Task {
   status: string;
   remark: string;
   category?: string;
+  task_time?: string | null;
   relative_id?: string;
   created_by?: string;
   created_at: string;

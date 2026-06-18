@@ -25,6 +25,7 @@ const emptyTask: Partial<Task> = {
   title: "", description: "", patient_id: "", care_manager_id: "",
   due_date: "", priority: "", status: "", remark: "",
   created_by: "", category: "Care Manager", relative_id: "",
+  task_time: "",
 };
 
 export default function TasksPage() {
@@ -238,6 +239,7 @@ export default function TasksPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Title</p><p className="text-sm font-medium">{viewingTask.title}</p></div>
                 <div><p className="text-xs text-muted-foreground">Due Date</p><p className="text-sm font-medium">{formatDate(viewingTask.due_date)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Task Time</p><p className="text-sm font-medium">{viewingTask.task_time || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{viewingTask.patient_id ? getPatientName(viewingTask.patient_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewingTask.care_manager_id ? getCMName(viewingTask.care_manager_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Priority</p><StatusBadge status={viewingTask.priority} /></div>
@@ -341,6 +343,10 @@ export default function TasksPage() {
             <div className="space-y-2">
               <Label>Due Date</Label>
               <Input type="date" value={editingTask?.due_date || ""} onChange={e => updateField("due_date", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Task Time</Label>
+              <Input type="time" value={editingTask?.task_time || ""} onChange={e => updateField("task_time", e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Priority</Label>
