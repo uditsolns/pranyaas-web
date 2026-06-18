@@ -23,6 +23,7 @@ import MedicationRemindersPage from "./pages/MedicationRemindersPage";
 import QuotesPage from "./pages/QuotesPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
+import PlanServiceRequestsPage from "./pages/PlanServiceRequestsPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -81,6 +82,7 @@ const App = () => (
                 <Route path="/vendors" element={<VendorsPage />} />
                 <Route path="/events" element={<EventsPage />} />
                 <Route path="/quotes" element={<QuotesPage />} />
+                <Route path="/plan-service-requests" element={<PlanServiceRequestsPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="*" element={<NotFound />} />

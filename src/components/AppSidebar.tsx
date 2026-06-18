@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Users, Heart, UserCog, Building2, ClipboardList,
-  Calendar, Activity, AlertTriangle, BarChart3, Settings, LogOut, CalendarDays, Quote, Pill
+  Calendar, Activity, AlertTriangle, BarChart3, Settings, LogOut, CalendarDays, Quote, Pill,
+  FileText
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/context/AuthContext";
@@ -25,6 +26,7 @@ const navItems = [
   { title: "Emergencies", url: "/emergencies", icon: AlertTriangle },
   { title: "Events", url: "/events", icon: CalendarDays },
   { title: "Quotes", url: "/quotes", icon: Quote },
+  { title: "Plan Requests", url: "/plan-service-requests", icon: FileText },
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Settings", url: "/settings", icon: Settings },
 ];

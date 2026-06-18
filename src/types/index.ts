@@ -328,6 +328,17 @@ export interface ServiceRequest {
   updated_at: string;
 }
 
+export interface PlanServiceRequest {
+  id: number;
+  plan_id: string | number;
+  user_id: string | number;
+  subject: string;
+  description: string;
+  priority: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface CarePlan {
   id: number;
   patient_id: string;
