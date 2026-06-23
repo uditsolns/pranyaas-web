@@ -35,7 +35,7 @@ export default function MedicationRemindersPage() {
   const hasEdit = canEdit(role, "medications");
   
   const { data: medications = [], isLoading } = useApiList<MedicationReminder>("medication-reminders", "/medication-reminders");
-  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
+  const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
   
   const createMutation = useApiCreate<MedicationReminder>("medication-reminders", "/medication-reminders", "Medication Reminder");
   const updateMutation = useApiUpdate<MedicationReminder>("medication-reminders", "/medication-reminders", "Medication Reminder");

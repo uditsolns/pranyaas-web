@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useApiGet, useApiList, useApiCreate, useApiUpdate, useApiDelete } from "@/hooks/useApi";
-import { Senior, VitalRecord, CareVisit, Task, EmergencyAlert, Relative, EmergencyContact } from "@/types";
+import { Senior, VitalRecord, CareVisit, Task, EmergencyAlert, Family, EmergencyContact } from "@/types";
 import { AddressDisplay } from "@/components/AddressDisplay";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ArrowLeft } from "lucide-react";
@@ -17,12 +17,12 @@ export default function SeniorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: senior, isLoading: lp } = useApiGet<Senior>(`senior-${id}`, `/seniors/${id}`, !!id);
+  const { data: senior, isLoading: lp } = useApiGet<Senior>(`patient-${id}`, `/patients/${id}`, !!id);
   const { data: vitals = [], isLoading: lv } = useApiList<VitalRecord>("vitals", "/vitals");
   const { data: visits = [], isLoading: lvs } = useApiList<CareVisit>("visits", "/care-visits");
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
   const { data: emergencies = [], isLoading: le } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
-  const { data: relatives = [], isLoading: lr } = useApiList<Relative>("relatives", "/relatives");
+  const { data: relatives = [], isLoading: lr } = useApiList<Family>("relatives", "/relatives");
   const { data: contacts = [], isLoading: lc } = useApiList<EmergencyContact>(`emergency-contacts-${id}`, `/emergency-contacts/${id}`);
 
   const createContact = useApiCreate<EmergencyContact>("emergency-contacts", "/emergency-contacts", "Emergency Contact");
@@ -57,7 +57,7 @@ export default function SeniorDetailPage() {
   const myVisits = visits.filter(v => v.patient_id === pid);
   const myTasks = tasks.filter(t => t.patient_id === pid);
   const myEmergencies = emergencies.filter(e => String(e.patient_id) === pid);
-  const myRelatives = relatives.filter(r => String(r.patient_id) === String(senior.user_id));
+  const myFamilies = relatives.filter(r => String(r.patient_id) === String(senior.user_id));
   const myContacts = Array.isArray(contacts) ? contacts : (contacts && typeof contacts === 'object' && Object.keys(contacts).length > 0 ? [contacts] : []);
 
   const openAddContact = () => {
@@ -149,8 +149,8 @@ export default function SeniorDetailPage() {
                   { label: "Visit Frequency", value: senior.family.visit_frequency },
                   { label: "Who Receives Updates", value: senior.family.update_receiver },
                   { label: "Preferred Communication", value: senior.family.communication_mode },
-                  { label: "Associated Relative", value: senior.relative_user?.name },
-                  { label: "Relative Phone", value: senior.relative_user?.phone },
+                  { label: "Associated Family", value: senior.relative_user?.name },
+                  { label: "Family Phone", value: senior.relative_user?.phone },
                 ].map(item => (
                   <div key={item.label}>
                     <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -523,11 +523,11 @@ export default function SeniorDetailPage() {
               </div>
             </div>
 
-            {/* Relatives Section */}
+            {/* Families Section */}
             <div className="bg-secondary/20 rounded-xl p-5 border border-border/50">
-              <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider opacity-70">Associated Relatives</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider opacity-70">Associated Families</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {myRelatives.map(r => (
+                {myFamilies.map(r => (
                   <div key={r.id} className="bg-card p-3 rounded-lg border border-border/50 shadow-sm opacity-80">
                     <p className="text-sm font-semibold text-foreground">{r.relative_name}</p>
                     <p className="text-xs text-muted-foreground">{r.relationship}</p>
@@ -538,7 +538,7 @@ export default function SeniorDetailPage() {
                     </div>
                   </div>
                 ))}
-                {myRelatives.length === 0 && (
+                {myFamilies.length === 0 && (
                   <p className="text-sm text-muted-foreground italic">No relatives registered.</p>
                 )}
               </div>

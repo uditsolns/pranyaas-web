@@ -8,7 +8,7 @@ import { NotificationModal } from "./NotificationModal";
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, role } = useAuth();
 
-  const roleLabel = role === "ADMIN" ? "Admin Dashboard" : role === "CARE_MANAGER" ? "Care Manager Portal" : role === "SENIOR_RELATIVE" ? "Relative Portal" : "Senior Portal";
+  const roleLabel = role === "ADMIN" ? "Admin Dashboard" : role === "CARE_MANAGER" ? "Care Manager Portal" : role === "SENIOR_FAMILY" ? "Family Portal" : "Senior Portal";
   const initials = user?.name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "U";
 
   return (

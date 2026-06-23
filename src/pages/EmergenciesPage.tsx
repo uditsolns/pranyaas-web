@@ -19,7 +19,7 @@ import { canEdit } from "@/lib/permissions";
 
 export default function EmergenciesPage() {
   const { data: emergencies = [], isLoading } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
-  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
+  const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
   const { role } = useAuth();
   const hasEdit = canEdit(role, "emergencies");
   const updateMutation = useApiUpdate<EmergencyAlert>("emergency-alerts", "/emergency-alerts", "Emergency");
@@ -32,7 +32,7 @@ export default function EmergenciesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [viewing, setViewing] = useState<EmergencyAlert | null>(null);
   const [editingItem, setEditingItem] = useState<Partial<EmergencyAlert> | null>(null);
-  const [relativesOpen, setRelativesOpen] = useState(false);
+  const [relativesOpen, setFamiliesOpen] = useState(false);
   const [viewingContacts, setViewingContacts] = useState<any[]>([]);
 
   const handleStatusUpdate = (id: number, status: string) => {
@@ -162,7 +162,7 @@ export default function EmergenciesPage() {
                   <p className="text-xs text-muted-foreground">{e.senior?.care_manager?.phone || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Relative</p>
+                  <p className="text-xs text-muted-foreground">Family</p>
                   <p className="text-sm font-semibold text-foreground">{e.senior?.emergency_contacts?.[0]?.name || "—"}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className="text-xs text-muted-foreground">{e.senior?.emergency_contacts?.[0]?.phone || "—"}</p>
@@ -171,7 +171,7 @@ export default function EmergenciesPage() {
                         variant="ghost" 
                         size="sm" 
                         className="h-5 px-1.5 text-primary bg-primary/5 hover:bg-black hover:text-white gap-1 rounded-md transition-all" 
-                        onClick={() => { setViewingContacts(e.senior?.emergency_contacts || []); setRelativesOpen(true); }}
+                        onClick={() => { setViewingContacts(e.senior?.emergency_contacts || []); setFamiliesOpen(true); }}
                       >
                         {(e.senior?.emergency_contacts?.length ?? 0) > 1 && (
                           <span className="text-[10px] font-bold">+{e.senior!.emergency_contacts!.length - 1} more</span>
@@ -218,14 +218,14 @@ export default function EmergenciesPage() {
                 <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{getSeniorName(viewing.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewing.senior?.care_manager?.name || "—"} ({viewing.senior?.care_manager?.phone || "—"})</p></div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Relative</p>
+                  <p className="text-xs text-muted-foreground">Family</p>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">
                       {viewing.senior?.emergency_contacts?.[0]?.name || "—"} 
                       {viewing.senior?.emergency_contacts?.[0]?.phone ? ` (${viewing.senior.emergency_contacts[0].phone})` : ""}
                     </p>
                     {(viewing.senior?.emergency_contacts?.length ?? 0) > 1 && (
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => { setViewingContacts(viewing.senior?.emergency_contacts || []); setRelativesOpen(true); }}>
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => { setViewingContacts(viewing.senior?.emergency_contacts || []); setFamiliesOpen(true); }}>
                         View All ({viewing.senior?.emergency_contacts?.length})
                       </Button>
                     )}
@@ -242,7 +242,7 @@ export default function EmergenciesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={relativesOpen} onOpenChange={setRelativesOpen}>
+      <Dialog open={relativesOpen} onOpenChange={setFamiliesOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Emergency Contacts</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
@@ -276,7 +276,7 @@ export default function EmergenciesPage() {
               <p className="text-sm text-muted-foreground text-center py-4">No emergency contacts found.</p>
             )}
             <div className="flex justify-end mt-4">
-              <Button variant="outline" onClick={() => setRelativesOpen(false)}>Close</Button>
+              <Button variant="outline" onClick={() => setFamiliesOpen(false)}>Close</Button>
             </div>
           </div>
         </DialogContent>

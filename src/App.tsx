@@ -16,7 +16,7 @@ import VisitsPage from "./pages/VisitsPage";
 import VitalsPage from "./pages/VitalsPage";
 import EmergenciesPage from "./pages/EmergenciesPage";
 import CareManagersPage from "./pages/CareManagersPage";
-import RelativesPage from "./pages/RelativesPage";
+import FamiliesPage from "./pages/FamiliesPage";
 import VendorsPage from "./pages/VendorsPage";
 import EventsPage from "./pages/EventsPage";
 import MedicationRemindersPage from "./pages/MedicationRemindersPage";
@@ -54,7 +54,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function RoleDashboard() {
   const { role } = useAuth();
   if (role === "CARE_MANAGER") return <CareManagerDashboard />;
-  if (role === "PATIENT" || role === "PATIENT_RELATIVE") return <SeniorDashboard />;
+  if (role === "PATIENT" || role === "PATIENT_FAMILY") return <SeniorDashboard />;
   return <AdminDashboard />;
 }
 
@@ -78,7 +78,7 @@ const App = () => (
                 <Route path="/medications" element={<MedicationRemindersPage />} />
                 <Route path="/emergencies" element={<EmergenciesPage />} />
                 <Route path="/care-managers" element={<CareManagersPage />} />
-                <Route path="/relatives" element={<RelativesPage />} />
+                <Route path="/relatives" element={<FamiliesPage />} />
                 <Route path="/vendors" element={<VendorsPage />} />
                 <Route path="/events" element={<EventsPage />} />
                 <Route path="/quotes" element={<QuotesPage />} />

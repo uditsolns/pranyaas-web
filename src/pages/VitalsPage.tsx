@@ -27,7 +27,7 @@ export default function VitalsPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "vitals");
   const { data: vitals = [], isLoading } = useApiList<VitalRecord>("vitals", "/vitals");
-  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
+  const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
   const { data: careVisits = [] } = useApiList<CareVisit>("care-visits", "/care-visits");
   const recorders = users.filter(u => String(u.role_id) === "1" || String(u.role_id) === "2");

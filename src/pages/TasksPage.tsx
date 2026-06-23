@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { Task, Senior, CareManager, ApiUser, Relative } from "@/types";
+import { Task, Senior, CareManager, ApiUser, Family } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
@@ -32,10 +32,10 @@ export default function TasksPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "tasks");
   const { data: tasks = [], isLoading, isError, error } = useApiList<Task>("tasks", "/tasks");
-  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
+  const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
   const { data: cms = [] } = useApiList<CareManager>("care-managers", "/care-managers");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
-  const { data: relatives = [] } = useApiList<Relative>("relatives", "/relatives");
+  const { data: relatives = [] } = useApiList<Family>("relatives", "/relatives");
   const createMutation = useApiCreate<Task>("tasks", "/tasks", "Task");
   const updateMutation = useApiUpdate<Task>("tasks", "/tasks", "Task");
   const deleteMutation = useApiDelete("tasks", "/tasks", "Task");
@@ -61,17 +61,17 @@ export default function TasksPage() {
     return c?.name || `CM #${id}`;
   };
 
-  const getRelativeName = (id: string | number) => {
+  const getFamilyName = (id: string | number) => {
     if (!id) return "N/A";
     const r = relatives.find(r => String(r.id) === String(id));
-    return r?.relative_name || `Relative #${id}`;
+    return r?.relative_name || `Family #${id}`;
   };
 
   const filtered = useMemo(() => {
     return tasks.filter(t => {
       const pName = t.patient_id ? getSeniorName(t.patient_id) : "";
       const cmName = t.care_manager_id ? getCMName(t.care_manager_id) : "";
-      const relName = t.relative_id ? getRelativeName(t.relative_id) : "";
+      const relName = t.relative_id ? getFamilyName(t.relative_id) : "";
       
       const matchesSearch = 
         (t.title || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -95,7 +95,7 @@ export default function TasksPage() {
 
     // Set created_by based on category as per requirements
     let created_by = "";
-    if (editingTask.category === "Relative" && editingTask.relative_id) {
+    if (editingTask.category === "Family" && editingTask.relative_id) {
       const relative = relatives.find(r => String(r.id) === String(editingTask.relative_id));
       created_by = relative ? String(relative.user_id) : "";
     }
@@ -130,7 +130,7 @@ export default function TasksPage() {
         const cm = cms.find(c => String(c.id) === String(p.care_manager_id) || String(c.user_id) === String(p.care_manager_id));
         if (cm) updates.care_manager_id = String(cm.user_id);
 
-        // Auto-select Relative
+        // Auto-select Family
         const rel = relatives.find(r => 
           String(r.id) === String(p.patient_relatives_id) || 
           String(r.user_id) === String(p.patient_relatives_id) ||
@@ -166,7 +166,7 @@ export default function TasksPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
           <TabsTrigger value="Care Manager">Care Manager</TabsTrigger>
-          <TabsTrigger value="Relative">Relative</TabsTrigger>
+          <TabsTrigger value="Family">Family</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -193,7 +193,7 @@ export default function TasksPage() {
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Task</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Senior</th>
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">{activeTab === "Care Manager" ? "Care Manager" : "Relative"}</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">{activeTab === "Care Manager" ? "Care Manager" : "Family"}</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Due Date</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Priority</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Status</th>
@@ -208,8 +208,8 @@ export default function TasksPage() {
                   <td className="p-4 text-sm font-medium text-foreground">{t.title}</td>
                   <td className="p-4 text-sm text-foreground">{t.patient_id ? getSeniorName(t.patient_id) : "—"}</td>
                   <td className="p-4 text-sm text-foreground">
-                    {t.category === "Relative" 
-                      ? (t.relative_id ? getRelativeName(t.relative_id) : "—")
+                    {t.category === "Family" 
+                      ? (t.relative_id ? getFamilyName(t.relative_id) : "—")
                       : (t.care_manager_id ? getCMName(t.care_manager_id) : "—")
                     }
                   </td>
@@ -287,44 +287,44 @@ export default function TasksPage() {
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Care Manager">Care Manager</SelectItem>
-                  <SelectItem value="Relative">Relative</SelectItem>
+                  <SelectItem value="Family">Family</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {editingTask?.category === "Relative" ? (
+            {editingTask?.category === "Family" ? (
               <div className="space-y-2">
-                <Label>Relative <span className="text-destructive">*</span></Label>
+                <Label>Family <span className="text-destructive">*</span></Label>
                 <Select value={editingTask?.relative_id || ""} onValueChange={v => updateField("relative_id", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select Relative..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select Family..." /></SelectTrigger>
                   <SelectContent>
                     {(() => {
                       const selectedSenior = seniors.find(p => String(p.user_id) === String(editingTask?.patient_id));
                       
-                      const seniorRelatives = relatives.filter(r => 
+                      const seniorFamilies = relatives.filter(r => 
                         String(r.patient_id) === String(editingTask?.patient_id) || 
                         (selectedSenior && String(r.patient_id) === String(selectedSenior.id)) ||
                         (selectedSenior && String(r.user_id) === String(selectedSenior.patient_relatives_id))
                       );
 
                       // If senior has a relative_user but it's not in the filtered list, add it as a virtual option
-                      if (selectedSenior?.relative_user && !seniorRelatives.some(r => String(r.user_id) === String(selectedSenior.relative_user?.id))) {
+                      if (selectedSenior?.relative_user && !seniorFamilies.some(r => String(r.user_id) === String(selectedSenior.relative_user?.id))) {
                         return (
                           <>
                             <SelectItem key={`rel-user-${selectedSenior.relative_user.id}`} value={String(selectedSenior.patient_relatives_id || selectedSenior.relative_user.id)}>
                               {selectedSenior.relative_user.name}
                             </SelectItem>
-                            {seniorRelatives.map(r => (
+                            {seniorFamilies.map(r => (
                               <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
                             ))}
                           </>
                         );
                       }
                       
-                      if (seniorRelatives.length === 0) {
+                      if (seniorFamilies.length === 0) {
                         return <SelectItem value="none" disabled>No relatives found for this senior</SelectItem>;
                       }
                       
-                      return seniorRelatives.map(r => (
+                      return seniorFamilies.map(r => (
                         <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
                       ));
                     })()}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { ExportButton } from "@/components/ExportButton";
-import { Relative, Senior } from "@/types";
+import { Family, Senior } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,27 +18,27 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 
-type RelativeForm = Partial<Relative> & { password?: string; patients?: any[] };
+type FamilyForm = Partial<Family> & { password?: string; patients?: any[] };
 
-const emptyRelative: RelativeForm = {
+const emptyFamily: FamilyForm = {
   relative_name: "", seniors: [], password: "", relationship: "", location_type: "",
   country: "India", phone_number: "", whatsapp_number: "", email: "",
   aadhaar_no: "", pan_no: "", preferred_update_mode: "",
   secondary_escalation_contact: "",
 };
 
-export default function RelativesPage() {
+export default function FamiliesPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "relatives");
-  const { data: relatives = [], isLoading } = useApiList<Relative>("relatives", "/relatives");
-  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
-  const createMutation = useApiCreate<Relative>("relatives", "/relatives", "Relative");
-  const updateMutation = useApiUpdatePost<Relative>("relatives", "/relatives", "Relative");
-  const deleteMutation = useApiDelete("relatives", "/relatives", "Relative");
+  const { data: relatives = [], isLoading } = useApiList<Family>("relatives", "/relatives");
+  const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
+  const createMutation = useApiCreate<Family>("relatives", "/relatives", "Family");
+  const updateMutation = useApiUpdatePost<Family>("relatives", "/relatives", "Family");
+  const deleteMutation = useApiDelete("relatives", "/relatives", "Family");
 
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<RelativeForm | null>(null);
+  const [editingItem, setEditingItem] = useState<FamilyForm | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
@@ -48,8 +48,8 @@ export default function RelativesPage() {
   );
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
-  const openCreate = () => { setEditingItem({ ...emptyRelative }); setErrors({}); setDialogOpen(true); };
-  const openEdit = (r: Relative) => { 
+  const openCreate = () => { setEditingItem({ ...emptyFamily }); setErrors({}); setDialogOpen(true); };
+  const openEdit = (r: Family) => { 
     const mappedSeniors = r.seniors ? r.seniors.map(p => ({
       user_id: String(p.user_id),
       patient_id: String(p.patient_id),
@@ -72,7 +72,7 @@ export default function RelativesPage() {
     const newErrors: Record<string, string> = {};
     if (!editingItem) return false;
 
-    if (!editingItem.relative_name?.trim()) newErrors.relative_name = "Relative Name is required";
+    if (!editingItem.relative_name?.trim()) newErrors.relative_name = "Family Name is required";
     if (!editingItem.seniors || editingItem.seniors.length === 0) newErrors.seniors = "At least one senior must be selected";
     
     if (!editingItem.id && (!editingItem.password || editingItem.password.length < 6)) {
@@ -112,11 +112,11 @@ export default function RelativesPage() {
     if (!validateForm()) return;
     if (editingItem.id) {
       updateMutation.mutate({ id: editingItem.id, data: editingItem }, { 
-        onSuccess: () => { setDialogOpen(false); toast.success("Relative updated successfully"); } 
+        onSuccess: () => { setDialogOpen(false); toast.success("Family updated successfully"); } 
       });
     } else {
-      createMutation.mutate(editingItem as Partial<Relative>, { 
-        onSuccess: () => { setDialogOpen(false); toast.success("Relative added successfully"); } 
+      createMutation.mutate(editingItem as Partial<Family>, { 
+        onSuccess: () => { setDialogOpen(false); toast.success("Family added successfully"); } 
       });
     }
   };
@@ -141,8 +141,8 @@ export default function RelativesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Relatives" subtitle={`${total} registered relatives`} actionLabel={hasEdit ? "Add Relative" : undefined} onAction={hasEdit ? openCreate : undefined}>
-        <ExportButton filename="relatives" title="Relatives Report" columns={[
+      <PageHeader title="Families" subtitle={`${total} registered relatives`} actionLabel={hasEdit ? "Add Family" : undefined} onAction={hasEdit ? openCreate : undefined}>
+        <ExportButton filename="relatives" title="Families Report" columns={[
           { key: "relative_name", label: "Name" }, { key: "relationship", label: "Relationship" },
           { key: "phone_number", label: "Phone" }, { key: "email", label: "Email" }, { key: "location_type", label: "Location" },
         ]} data={filtered} />
@@ -199,10 +199,10 @@ export default function RelativesPage() {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingItem?.id ? "Edit Relative" : "Add Relative"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingItem?.id ? "Edit Family" : "Add Family"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
-              <Label className={errors.relative_name ? "text-destructive" : ""}>Relative Name <span className="text-destructive">*</span></Label>
+              <Label className={errors.relative_name ? "text-destructive" : ""}>Family Name <span className="text-destructive">*</span></Label>
               <Input 
                 value={editingItem?.relative_name || ""} 
                 onChange={e => updateField("relative_name", e.target.value)} 
@@ -354,13 +354,13 @@ export default function RelativesPage() {
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
-              {editingItem?.id ? "Update" : "Add"} Relative
+              {editingItem?.id ? "Update" : "Add"} Family
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <DeleteConfirmDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)} onConfirm={handleDelete} title="Delete Relative?" />
+      <DeleteConfirmDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)} onConfirm={handleDelete} title="Delete Family?" />
     </div>
   );
 }

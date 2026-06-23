@@ -169,7 +169,7 @@ export interface CareManager {
   user?: ApiUser;
 }
 
-export interface Relative {
+export interface Family {
   id: number;
   user_id: string;
   patient_id: string;

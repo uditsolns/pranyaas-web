@@ -14,7 +14,7 @@ const COLORS = ["hsl(160, 60%, 45%)", "hsl(40, 90%, 54%)", "hsl(24, 90%, 54%)", 
 export default function ReportsPage() {
   const [reportType, setReportType] = useState("overview");
 
-  const { data: seniors = [], isLoading: lp } = useApiList<Senior>("seniors", "/seniors");
+  const { data: seniors = [], isLoading: lp } = useApiList<Senior>("patients", "/patients");
   const { data: visits = [], isLoading: lv } = useApiList<CareVisit>("visits", "/care-visits");
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
   const { data: emergencies = [], isLoading: le } = useApiList<EmergencyAlert>("emergencies", "/emergency-alerts");

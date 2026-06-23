@@ -29,7 +29,7 @@ export default function VisitsPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "visits");
   const { data: visits = [], isLoading } = useApiList<CareVisit>("care-visits", "/care-visits");
-  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
+  const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
   const { data: cms = [] } = useApiList<CareManager>("care-managers", "/care-managers");
   const createMutation = useApiCreate<CareVisit>("care-visits", "/care-visits", "Visit");
   const updateMutation = useApiUpdatePost<CareVisit>("care-visits", "/care-visits", "Visit");

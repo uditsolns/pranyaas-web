@@ -7,7 +7,7 @@ export type AppModule =
   | "dashboard" | "seniors" | "relatives" | "care-managers" | "vendors"
   | "tasks" | "visits" | "vitals" | "emergencies" | "reports" | "settings" | "events" | "quotes" | "medications" | "plan-service-requests";
 
-export type AppRole = "ADMIN" | "CARE_MANAGER" | "SENIOR" | "SENIOR_RELATIVE";
+export type AppRole = "ADMIN" | "CARE_MANAGER" | "SENIOR" | "SENIOR_FAMILY";
 
 const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
   ADMIN: {
@@ -61,7 +61,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     medications: "view",
     "plan-service-requests": "full",
   },
-  SENIOR_RELATIVE: {
+  SENIOR_FAMILY: {
     dashboard: "view",
     seniors: "view",
     relatives: "view",

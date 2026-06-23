@@ -17,8 +17,8 @@ interface SeniorDashboardData {
 export default function SeniorDashboard() {
   const { user } = useAuth();
 
-  const { data: dashboard, isLoading: ld } = useApiGet<SeniorDashboardData>("senior-dashboard", "/senior/dashboard");
-  const { data: seniors = [], isLoading: lp } = useApiList<Senior>("seniors", "/seniors");
+  const { data: dashboard, isLoading: ld } = useApiGet<SeniorDashboardData>("senior-dashboard", "/patient/dashboard");
+  const { data: seniors = [], isLoading: lp } = useApiList<Senior>("patients", "/patients");
   const { data: visits = [], isLoading: lv } = useApiList<CareVisit>("care-visits", "/care-visits");
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
   const { data: vitals = [], isLoading: lvt } = useApiList<VitalRecord>("vitals", "/vitals");

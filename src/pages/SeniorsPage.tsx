@@ -99,24 +99,24 @@ export default function SeniorsPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "seniors");
   const { data: seniors = [], isLoading } = useApiList<Senior>(
-    "seniors",
-    "/seniors",
+    "patients",
+    "/patients",
   );
   const { data: cms = [] } = useApiList<CareManager>(
     "care-managers",
     "/care-managers",
   );
   const createMutation = useApiCreate<Senior>(
-    "seniors",
-    "/seniors",
+    "patients",
+    "/patients",
     "Senior",
   );
   const updateMutation = useApiUpdatePost<Senior>(
-    "seniors",
-    "/seniors",
+    "patients",
+    "/patients",
     "Senior",
   );
-  const deleteMutation = useApiDelete("seniors", "/seniors", "Senior");
+  const deleteMutation = useApiDelete("patients", "/patients", "Senior");
 
   const [search, setSearch] = useState("");
   const [filterRisk, setFilterRisk] = useState("all");
