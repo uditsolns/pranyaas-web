@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "care_manager" | "patient";
+export type UserRole = "admin" | "care_manager" | "senior";
 
 // ============= API Response Types (match exact API schemas from Excel) =============
 
@@ -15,7 +15,7 @@ export interface ApiUser {
   role?: { id: number; name: string; description: string | null };
 }
 
-export interface PatientFamily {
+export interface SeniorFamily {
   id: number;
   patient_id: string;
   children_location: string;
@@ -24,7 +24,7 @@ export interface PatientFamily {
   communication_mode: string;
 }
 
-export interface PatientMedical {
+export interface SeniorMedical {
   id: number;
   patient_id: string;
   conditions: string; // JSON string array
@@ -35,7 +35,7 @@ export interface PatientMedical {
   preferred_hospital: string;
 }
 
-export interface PatientMobility {
+export interface SeniorMobility {
   id: number;
   patient_id: string;
   walking_status: string;
@@ -46,7 +46,7 @@ export interface PatientMobility {
   caregiver_needed: boolean;
 }
 
-export interface PatientFallRisk {
+export interface SeniorFallRisk {
   id: number;
   patient_id: string;
   fall_history: boolean;
@@ -59,7 +59,7 @@ export interface PatientFallRisk {
   grab_bars: boolean;
 }
 
-export interface PatientSocial {
+export interface SeniorSocial {
   id: number;
   patient_id: string;
   family_contact: string;
@@ -67,14 +67,14 @@ export interface PatientSocial {
   hobbies: string;
 }
 
-export interface PatientLifestyle {
+export interface SeniorLifestyle {
   id: number;
   patient_id: string;
   diet: string;
   addiction: string;
 }
 
-export interface PatientEmergency {
+export interface SeniorEmergency {
   id: number;
   patient_id: string;
   family_doctor: string;
@@ -84,7 +84,7 @@ export interface PatientEmergency {
   consent: boolean;
 }
 
-export interface Patient {
+export interface Senior {
   id: number;
   user_id: string;
   patient_photo: string | null;
@@ -133,13 +133,13 @@ export interface Patient {
   relative_user?: ApiUser;
   emergency_alerts?: EmergencyAlert[];
   care_plans?: CarePlan[];
-  family?: PatientFamily;
-  medical?: PatientMedical;
-  mobility?: PatientMobility;
-  fall_risk?: PatientFallRisk;
-  social?: PatientSocial;
-  lifestyle?: PatientLifestyle;
-  emergency?: PatientEmergency;
+  family?: SeniorFamily;
+  medical?: SeniorMedical;
+  mobility?: SeniorMobility;
+  fall_risk?: SeniorFallRisk;
+  social?: SeniorSocial;
+  lifestyle?: SeniorLifestyle;
+  emergency?: SeniorEmergency;
   vitals?: VitalRecord; // The API seems to return a single vitals object too
   living_situation?: string;
 }
@@ -189,15 +189,15 @@ export interface Relative {
   secondary_escalation_contact: string;
   created_at: string;
   updated_at: string;
-  patient?: Patient;
+  patient?: Senior;
   user?: ApiUser;
   patients?: {
     id?: number;
     relative_id?: string;
     user_id: string;
     patient_id: string;
-    patient_name: string;
-    patient?: Patient;
+    senior_name: string;
+    patient?: Senior;
   }[];
 }
 

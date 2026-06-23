@@ -16,7 +16,7 @@ This project is a modern web application for elder care management, built with a
 ## Project Structure
 
 - `src/components`: Reusable UI components.
-- `src/pages`: Main application views (Dashboard, Patients, Tasks, etc.).
+- `src/pages`: Main application views (Dashboard, Seniors, Tasks, etc.).
 - `src/context`: Authentication and application-level state.
 - `src/hooks`: Custom React hooks for data fetching and logic.
 - `src/data`: Mock data and static configuration.

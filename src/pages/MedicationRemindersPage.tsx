@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { MedicationReminder, Patient } from "@/types";
+import { MedicationReminder, Senior } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, Pill } from "lucide-react";
@@ -35,7 +35,7 @@ export default function MedicationRemindersPage() {
   const hasEdit = canEdit(role, "medications");
   
   const { data: medications = [], isLoading } = useApiList<MedicationReminder>("medication-reminders", "/medication-reminders");
-  const { data: patients = [] } = useApiList<Patient>("patients", "/patients");
+  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
   
   const createMutation = useApiCreate<MedicationReminder>("medication-reminders", "/medication-reminders", "Medication Reminder");
   const updateMutation = useApiUpdate<MedicationReminder>("medication-reminders", "/medication-reminders", "Medication Reminder");
@@ -48,13 +48,13 @@ export default function MedicationRemindersPage() {
   const [viewingItem, setViewingItem] = useState<MedicationReminder | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  const getPatientName = (id: string | number) => {
-    const p = patients.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
-    return p?.full_name || `Patient #${id}`;
+  const getSeniorName = (id: string | number) => {
+    const p = seniors.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
+    return p?.full_name || `Senior #${id}`;
   };
 
   const filtered = medications.filter(m => {
-    const pName = getPatientName(m.patient_id);
+    const pName = getSeniorName(m.patient_id);
     return (
       (m.medicine_name || "").toLowerCase().includes(search.toLowerCase()) ||
       pName.toLowerCase().includes(search.toLowerCase())
@@ -109,7 +109,7 @@ export default function MedicationRemindersPage() {
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search medications or patients..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+        <Input placeholder="Search medications or seniors..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
       </div>
 
       <div className="bg-card rounded-xl card-shadow border border-border/50 overflow-hidden">
@@ -117,7 +117,7 @@ export default function MedicationRemindersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">Patient</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Senior</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Medicine</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Type</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Dosage / Freq</th>
@@ -131,7 +131,7 @@ export default function MedicationRemindersPage() {
                 <tr><td colSpan={7}><EmptyState title="No medications found" icon={Pill} /></td></tr>
               ) : paged.map(m => (
                 <tr key={m.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
-                  <td className="p-4 text-sm font-medium text-foreground">{getPatientName(m.patient_id)}</td>
+                  <td className="p-4 text-sm font-medium text-foreground">{getSeniorName(m.patient_id)}</td>
                   <td className="p-4 text-sm text-foreground">{m.medicine_name}</td>
                   <td className="p-4 text-sm text-foreground capitalize">{m.medicine_type}</td>
                   <td className="p-4 text-sm text-foreground">{m.dosage} <span className="text-muted-foreground text-xs ml-1">({m.frequency})</span></td>
@@ -162,7 +162,7 @@ export default function MedicationRemindersPage() {
           {viewingItem && (
             <div className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewingItem.patient_id)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{getSeniorName(viewingItem.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingItem.status || "pending"} /></div>
                 <div><p className="text-xs text-muted-foreground">Medicine</p><p className="text-sm font-medium">{viewingItem.medicine_name}</p></div>
                 <div><p className="text-xs text-muted-foreground">Type</p><p className="text-sm font-medium capitalize">{viewingItem.medicine_type}</p></div>
@@ -185,17 +185,17 @@ export default function MedicationRemindersPage() {
           <DialogHeader><DialogTitle>{editingItem?.id ? "Edit Medication" : "Add Medication"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 gap-4 mt-4">
             <div className="space-y-2">
-              <Label>Patient <span className="text-destructive">*</span></Label>
+              <Label>Senior <span className="text-destructive">*</span></Label>
               <Select 
                 value={editingItem?.patient_id ? (() => {
-                  const p = patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
+                  const p = seniors.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
                   return p ? String(p.user_id) : String(editingItem.patient_id);
                 })() : ""} 
                 onValueChange={v => updateField("patient_id", v)}
               >
-                <SelectTrigger><SelectValue placeholder="Select patient..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select senior..." /></SelectTrigger>
                 <SelectContent>
-                  {patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}
+                  {seniors.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

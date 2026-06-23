@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { ExportButton } from "@/components/ExportButton";
-import { Patient, CareManager } from "@/types";
+import { Senior, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,14 +49,14 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 
-type PatientForm = Partial<Patient> & {
+type SeniorForm = Partial<Senior> & {
   name?: string;
   email?: string;
   phone?: string;
   password?: string;
 };
 
-const emptyPatient: PatientForm = {
+const emptySenior: SeniorForm = {
   full_name: "",
   name: "",
   email: "",
@@ -95,43 +95,43 @@ const emptyPatient: PatientForm = {
   care_manager_id: "",
 };
 
-export default function PatientsPage() {
+export default function SeniorsPage() {
   const { role } = useAuth();
-  const hasEdit = canEdit(role, "patients");
-  const { data: patients = [], isLoading } = useApiList<Patient>(
-    "patients",
-    "/patients",
+  const hasEdit = canEdit(role, "seniors");
+  const { data: seniors = [], isLoading } = useApiList<Senior>(
+    "seniors",
+    "/seniors",
   );
   const { data: cms = [] } = useApiList<CareManager>(
     "care-managers",
     "/care-managers",
   );
-  const createMutation = useApiCreate<Patient>(
-    "patients",
-    "/patients",
-    "Patient",
+  const createMutation = useApiCreate<Senior>(
+    "seniors",
+    "/seniors",
+    "Senior",
   );
-  const updateMutation = useApiUpdatePost<Patient>(
-    "patients",
-    "/patients",
-    "Patient",
+  const updateMutation = useApiUpdatePost<Senior>(
+    "seniors",
+    "/seniors",
+    "Senior",
   );
-  const deleteMutation = useApiDelete("patients", "/patients", "Patient");
+  const deleteMutation = useApiDelete("seniors", "/seniors", "Senior");
 
   const [search, setSearch] = useState("");
   const [filterRisk, setFilterRisk] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<PatientForm | null>(
+  const [editingSenior, setEditingSenior] = useState<SeniorForm | null>(
     null,
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [kycApprovalTarget, setKycApprovalTarget] = useState<Patient | null>(
+  const [kycApprovalTarget, setKycApprovalTarget] = useState<Senior | null>(
     null,
   );
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  const filtered = patients.filter((p) => {
+  const filtered = seniors.filter((p) => {
     const matchesSearch =
       (p.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
       (p.primary_diagnosis || "").toLowerCase().includes(search.toLowerCase());
@@ -143,12 +143,12 @@ export default function PatientsPage() {
     usePagination(filtered);
 
   const openCreate = () => {
-    setEditingPatient({ ...emptyPatient });
+    setEditingSenior({ ...emptySenior });
     setErrors({});
     setDialogOpen(true);
   };
-  const openEdit = (p: Patient) => {
-    setEditingPatient({
+  const openEdit = (p: Senior) => {
+    setEditingSenior({
       ...p,
       name: p.user?.name || p.full_name,
       email: p.user?.email || "",
@@ -160,61 +160,61 @@ export default function PatientsPage() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!editingPatient) return false;
+    if (!editingSenior) return false;
 
-    if (!editingPatient.full_name?.trim())
+    if (!editingSenior.full_name?.trim())
       newErrors.full_name = "Full Name is required";
 
-    if (!editingPatient.id) {
-      if (!editingPatient.name?.trim())
+    if (!editingSenior.id) {
+      if (!editingSenior.name?.trim())
         newErrors.name = "User Account Name is required";
-      if (!editingPatient.email?.trim()) {
+      if (!editingSenior.email?.trim()) {
         newErrors.email = "Email is required";
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editingPatient.email)) {
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editingSenior.email)) {
         newErrors.email = "Invalid email format";
       }
-      if (!editingPatient.phone?.trim()) {
+      if (!editingSenior.phone?.trim()) {
         newErrors.phone = "Phone number is required";
-      } else if (!/^\d{10}$/.test(editingPatient.phone)) {
+      } else if (!/^\d{10}$/.test(editingSenior.phone)) {
         newErrors.phone = "Phone number must be 10 digits";
       }
-      if (!editingPatient.password?.trim()) {
+      if (!editingSenior.password?.trim()) {
         newErrors.password = "Password is required";
-      } else if (editingPatient.password.length < 6) {
+      } else if (editingSenior.password.length < 6) {
         newErrors.password = "Password must be at least 6 characters";
       }
     } else {
-      if (editingPatient.phone && !/^\d{10}$/.test(editingPatient.phone)) {
+      if (editingSenior.phone && !/^\d{10}$/.test(editingSenior.phone)) {
         newErrors.phone = "Phone number must be 10 digits";
       }
     }
 
     if (
-      editingPatient.aadhaar_no &&
-      !/^\d{12}$/.test(editingPatient.aadhaar_no)
+      editingSenior.aadhaar_no &&
+      !/^\d{12}$/.test(editingSenior.aadhaar_no)
     ) {
       newErrors.aadhaar_no = "Aadhaar Number must be 12 digits";
     }
 
     if (
-      editingPatient.pan_no &&
-      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(editingPatient.pan_no.toUpperCase())
+      editingSenior.pan_no &&
+      !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(editingSenior.pan_no.toUpperCase())
     ) {
       newErrors.pan_no = "Invalid PAN format";
     }
 
-    if (editingPatient.dob) {
-      const birthDate = new Date(editingPatient.dob);
+    if (editingSenior.dob) {
+      const birthDate = new Date(editingSenior.dob);
       const today = new Date();
       if (birthDate > today) {
         newErrors.dob = "Date of Birth cannot be in the future";
       }
     }
 
-    if (editingPatient.weight && isNaN(Number(editingPatient.weight))) {
+    if (editingSenior.weight && isNaN(Number(editingSenior.weight))) {
       newErrors.weight = "Weight must be a number";
     }
-    if (editingPatient.height && isNaN(Number(editingPatient.height))) {
+    if (editingSenior.height && isNaN(Number(editingSenior.height))) {
       newErrors.height = "Height must be a number";
     }
 
@@ -230,14 +230,14 @@ export default function PatientsPage() {
 
   const handleSave = () => {
     if (!validateForm()) return;
-    const payload = { ...editingPatient };
-    if (editingPatient.id) {
+    const payload = { ...editingSenior };
+    if (editingSenior.id) {
       updateMutation.mutate(
-        { id: editingPatient.id, data: payload },
+        { id: editingSenior.id, data: payload },
         {
           onSuccess: () => {
             setDialogOpen(false);
-            toast.success("Patient updated successfully");
+            toast.success("Senior updated successfully");
           },
         },
       );
@@ -245,7 +245,7 @@ export default function PatientsPage() {
       createMutation.mutate(payload, {
         onSuccess: () => {
           setDialogOpen(false);
-          toast.success("Patient created successfully");
+          toast.success("Senior created successfully");
         },
       });
     }
@@ -266,7 +266,7 @@ export default function PatientsPage() {
       delete next[field];
       return next;
     });
-    setEditingPatient((prev) => {
+    setEditingSenior((prev) => {
       if (!prev) return prev;
       const updated = { ...prev, [field]: value };
 
@@ -301,14 +301,14 @@ export default function PatientsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Patients"
-        subtitle={`${total} registered patients`}
-        actionLabel={hasEdit ? "Add Patient" : undefined}
+        title="Seniors"
+        subtitle={`${total} registered seniors`}
+        actionLabel={hasEdit ? "Add Senior" : undefined}
         onAction={hasEdit ? openCreate : undefined}
       >
         <ExportButton
-          filename="patients"
-          title="Patients Report"
+          filename="seniors"
+          title="Seniors Report"
           columns={[
             { key: "full_name", label: "Name" },
             { key: "age", label: "Age" },
@@ -326,7 +326,7 @@ export default function PatientsPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search patients..."
+            placeholder="Search seniors..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -361,7 +361,7 @@ export default function PatientsPage() {
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">
-                  Patient
+                  Senior
                 </th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">
                   Age
@@ -388,7 +388,7 @@ export default function PatientsPage() {
                 <tr>
                   <td colSpan={6}>
                     <EmptyState
-                      title="No patients found"
+                      title="No seniors found"
                       description="Try adjusting your search or filters"
                     />
                   </td>
@@ -455,7 +455,7 @@ export default function PatientsPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => navigate(`/patients/${p.id}`)}
+                              onClick={() => navigate(`/seniors/${p.id}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -529,11 +529,11 @@ export default function PatientsPage() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingPatient?.id ? "Edit Patient" : "Add New Patient"}
+              {editingSenior?.id ? "Edit Senior" : "Add New Senior"}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            {!editingPatient?.id && (
+            {!editingSenior?.id && (
               <>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:col-span-2 pt-1">
                   User Account
@@ -543,7 +543,7 @@ export default function PatientsPage() {
                     Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    value={editingPatient?.name || ""}
+                    value={editingSenior?.name || ""}
                     onChange={(e) => updateField("name", e.target.value)}
                     placeholder="Login display name"
                     className={
@@ -564,7 +564,7 @@ export default function PatientsPage() {
                   </Label>
                   <Input
                     type="email"
-                    value={editingPatient?.email || ""}
+                    value={editingSenior?.email || ""}
                     onChange={(e) => updateField("email", e.target.value)}
                     placeholder="user@example.com"
                     className={
@@ -584,7 +584,7 @@ export default function PatientsPage() {
                     Phone <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    value={editingPatient?.phone || ""}
+                    value={editingSenior?.phone || ""}
                     onChange={(e) => updateField("phone", e.target.value)}
                     placeholder="9876543210"
                     className={
@@ -605,7 +605,7 @@ export default function PatientsPage() {
                   </Label>
                   <Input
                     type="password"
-                    value={editingPatient?.password || ""}
+                    value={editingSenior?.password || ""}
                     onChange={(e) => updateField("password", e.target.value)}
                     className={
                       errors.password
@@ -625,14 +625,14 @@ export default function PatientsPage() {
               </>
             )}
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:col-span-2 pt-1">
-              Patient Details
+              Senior Details
             </p>
             <div className="space-y-2">
               <Label className={errors.full_name ? "text-destructive" : ""}>
                 Full Name <span className="text-destructive">*</span>
               </Label>
               <Input
-                value={editingPatient?.full_name || ""}
+                value={editingSenior?.full_name || ""}
                 onChange={(e) => updateField("full_name", e.target.value)}
                 className={
                   errors.full_name
@@ -652,7 +652,7 @@ export default function PatientsPage() {
               </Label>
               <Input
                 type="date"
-                value={editingPatient?.dob || ""}
+                value={editingSenior?.dob || ""}
                 onChange={(e) => updateField("dob", e.target.value)}
                 className={
                   errors.dob
@@ -669,14 +669,14 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Age</Label>
               <Input
-                value={editingPatient?.age || ""}
+                value={editingSenior?.age || ""}
                 onChange={(e) => updateField("age", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Gender</Label>
               <Select
-                value={editingPatient?.gender || ""}
+                value={editingSenior?.gender || ""}
                 onValueChange={(v) => updateField("gender", v)}
               >
                 <SelectTrigger>
@@ -692,7 +692,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Blood Group</Label>
               <Select
-                value={editingPatient?.blood_group || ""}
+                value={editingSenior?.blood_group || ""}
                 onValueChange={(v) => updateField("blood_group", v)}
               >
                 <SelectTrigger>
@@ -714,7 +714,7 @@ export default function PatientsPage() {
                 Aadhaar No
               </Label>
               <Input
-                value={editingPatient?.aadhaar_no || ""}
+                value={editingSenior?.aadhaar_no || ""}
                 onChange={(e) => updateField("aadhaar_no", e.target.value)}
                 className={
                   errors.aadhaar_no
@@ -733,7 +733,7 @@ export default function PatientsPage() {
                 PAN No
               </Label>
               <Input
-                value={editingPatient?.pan_no || ""}
+                value={editingSenior?.pan_no || ""}
                 onChange={(e) => updateField("pan_no", e.target.value)}
                 className={
                   errors.pan_no
@@ -750,7 +750,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Primary Language</Label>
               <Input
-                value={editingPatient?.primary_language || ""}
+                value={editingSenior?.primary_language || ""}
                 onChange={(e) =>
                   updateField("primary_language", e.target.value)
                 }
@@ -759,7 +759,7 @@ export default function PatientsPage() {
             <div className="space-y-2 sm:col-span-2">
               <Label>Primary Diagnosis</Label>
               <Input
-                value={editingPatient?.primary_diagnosis || ""}
+                value={editingSenior?.primary_diagnosis || ""}
                 onChange={(e) =>
                   updateField("primary_diagnosis", e.target.value)
                 }
@@ -768,7 +768,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Secondary Diagnosis</Label>
               <Input
-                value={editingPatient?.secondary_diagnosis || ""}
+                value={editingSenior?.secondary_diagnosis || ""}
                 onChange={(e) =>
                   updateField("secondary_diagnosis", e.target.value)
                 }
@@ -777,14 +777,14 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Allergies</Label>
               <Input
-                value={editingPatient?.allergies || ""}
+                value={editingSenior?.allergies || ""}
                 onChange={(e) => updateField("allergies", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Current Medications</Label>
               <Input
-                value={editingPatient?.current_medications || ""}
+                value={editingSenior?.current_medications || ""}
                 onChange={(e) =>
                   updateField("current_medications", e.target.value)
                 }
@@ -793,7 +793,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Treating Doctor</Label>
               <Input
-                value={editingPatient?.treating_doctor_name || ""}
+                value={editingSenior?.treating_doctor_name || ""}
                 onChange={(e) =>
                   updateField("treating_doctor_name", e.target.value)
                 }
@@ -802,7 +802,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Preferred Hospital</Label>
               <Input
-                value={editingPatient?.preferred_hospital || ""}
+                value={editingSenior?.preferred_hospital || ""}
                 onChange={(e) =>
                   updateField("preferred_hospital", e.target.value)
                 }
@@ -811,28 +811,28 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Past Surgeries</Label>
               <Input
-                value={editingPatient?.past_surgeries || ""}
+                value={editingSenior?.past_surgeries || ""}
                 onChange={(e) => updateField("past_surgeries", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Mobility Status</Label>
               <Input
-                value={editingPatient?.mobility_status || ""}
+                value={editingSenior?.mobility_status || ""}
                 onChange={(e) => updateField("mobility_status", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Fall Risk Level</Label>
               <Input
-                value={editingPatient?.fall_risk_level || ""}
+                value={editingSenior?.fall_risk_level || ""}
                 onChange={(e) => updateField("fall_risk_level", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Mental Health Status</Label>
               <Input
-                value={editingPatient?.mental_health_status || ""}
+                value={editingSenior?.mental_health_status || ""}
                 onChange={(e) =>
                   updateField("mental_health_status", e.target.value)
                 }
@@ -841,28 +841,28 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Baseline BP</Label>
               <Input
-                value={editingPatient?.baseline_bp || ""}
+                value={editingSenior?.baseline_bp || ""}
                 onChange={(e) => updateField("baseline_bp", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Baseline Sugar</Label>
               <Input
-                value={editingPatient?.baseline_sugar || ""}
+                value={editingSenior?.baseline_sugar || ""}
                 onChange={(e) => updateField("baseline_sugar", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Baseline SpO2</Label>
               <Input
-                value={editingPatient?.baseline_spo2 || ""}
+                value={editingSenior?.baseline_spo2 || ""}
                 onChange={(e) => updateField("baseline_spo2", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Risk Category</Label>
               <Select
-                value={editingPatient?.risk_category || ""}
+                value={editingSenior?.risk_category || ""}
                 onValueChange={(v) => updateField("risk_category", v)}
               >
                 <SelectTrigger>
@@ -879,14 +879,14 @@ export default function PatientsPage() {
             <div className="space-y-2 sm:col-span-2">
               <Label>Address</Label>
               <Input
-                value={editingPatient?.address || ""}
+                value={editingSenior?.address || ""}
                 onChange={(e) => updateField("address", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label>Landmark</Label>
               <Input
-                value={editingPatient?.landmark || ""}
+                value={editingSenior?.landmark || ""}
                 onChange={(e) => updateField("landmark", e.target.value)}
               />
             </div>
@@ -895,7 +895,7 @@ export default function PatientsPage() {
                 Weight
               </Label>
               <Input
-                value={editingPatient?.weight || ""}
+                value={editingSenior?.weight || ""}
                 onChange={(e) => updateField("weight", e.target.value)}
                 className={
                   errors.weight
@@ -914,7 +914,7 @@ export default function PatientsPage() {
                 Height
               </Label>
               <Input
-                value={editingPatient?.height || ""}
+                value={editingSenior?.height || ""}
                 onChange={(e) => updateField("height", e.target.value)}
                 className={
                   errors.height
@@ -931,7 +931,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Insurance Policy Name</Label>
               <Input
-                value={editingPatient?.insurance_policy_name || ""}
+                value={editingSenior?.insurance_policy_name || ""}
                 onChange={(e) =>
                   updateField("insurance_policy_name", e.target.value)
                 }
@@ -940,7 +940,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Insurance Policy Number</Label>
               <Input
-                value={editingPatient?.insurance_policy_number || ""}
+                value={editingSenior?.insurance_policy_number || ""}
                 onChange={(e) =>
                   updateField("insurance_policy_number", e.target.value)
                 }
@@ -949,7 +949,7 @@ export default function PatientsPage() {
             <div className="space-y-2">
               <Label>Care Manager</Label>
               <Select
-                value={editingPatient?.care_manager_id || ""}
+                value={editingSenior?.care_manager_id || ""}
                 onValueChange={(v) => updateField("care_manager_id", v)}
               >
                 <SelectTrigger>
@@ -975,10 +975,10 @@ export default function PatientsPage() {
             >
               {createMutation.isPending || updateMutation.isPending
                 ? "Saving..."
-                : editingPatient?.id
+                : editingSenior?.id
                   ? "Update"
                   : "Create"}{" "}
-              Patient
+              Senior
             </Button>
           </div>
         </DialogContent>
@@ -988,8 +988,8 @@ export default function PatientsPage() {
         open={deleteTarget !== null}
         onOpenChange={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Delete Patient?"
-        description="This will permanently remove the patient record."
+        title="Delete Senior?"
+        description="This will permanently remove the senior record."
       />
 
       <Dialog
@@ -1141,9 +1141,9 @@ export default function PatientsPage() {
               <div className="grid grid-cols-1 gap-4">
                 {[
                   {
-                    label: "Patient Photo",
+                    label: "Senior Photo",
                     field: "patient_photo",
-                    folder: "patients",
+                    folder: "seniors",
                   },
                   {
                     label: "Aadhaar Card",
@@ -1158,7 +1158,7 @@ export default function PatientsPage() {
                   },
                 ].map((doc) => {
                   const filename = kycApprovalTarget?.[
-                    doc.field as keyof Patient
+                    doc.field as keyof Senior
                   ] as string;
                   const url = filename
                     ? `https://uditsolutions.in/eldercare/storage/app/public/${doc.folder}/${filename}`

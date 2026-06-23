@@ -48,7 +48,7 @@ export function useApiUpdate<T>(key: string, endpoint: string, label: string) {
   });
 }
 
-// For endpoints that use POST for updates (like patients)
+// For endpoints that use POST for updates (like seniors)
 export function useApiUpdatePost<T>(key: string, endpoint: string, label: string) {
   const qc = useQueryClient();
   return useMutation({

@@ -1,7 +1,7 @@
 // Chart data kept for dashboard visualizations
-export const patientGrowthData = [
-  { month: "Oct", patients: 42 }, { month: "Nov", patients: 48 }, { month: "Dec", patients: 55 },
-  { month: "Jan", patients: 60 }, { month: "Feb", patients: 68 }, { month: "Mar", patients: 74 },
+export const seniorGrowthData = [
+  { month: "Oct", seniors: 42 }, { month: "Nov", seniors: 48 }, { month: "Dec", seniors: 55 },
+  { month: "Jan", seniors: 60 }, { month: "Feb", seniors: 68 }, { month: "Mar", seniors: 74 },
 ];
 
 export const visitActivityData = [

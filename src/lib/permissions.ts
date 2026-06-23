@@ -4,15 +4,15 @@
 export type AccessLevel = "full" | "view" | "none";
 
 export type AppModule =
-  | "dashboard" | "patients" | "relatives" | "care-managers" | "vendors"
+  | "dashboard" | "seniors" | "relatives" | "care-managers" | "vendors"
   | "tasks" | "visits" | "vitals" | "emergencies" | "reports" | "settings" | "events" | "quotes" | "medications" | "plan-service-requests";
 
-export type AppRole = "ADMIN" | "CARE_MANAGER" | "PATIENT" | "PATIENT_RELATIVE";
+export type AppRole = "ADMIN" | "CARE_MANAGER" | "SENIOR" | "SENIOR_RELATIVE";
 
 const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
   ADMIN: {
     dashboard: "view",
-    patients: "full",
+    seniors: "full",
     relatives: "full",
     "care-managers": "full",
     vendors: "full",
@@ -29,7 +29,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
   },
   CARE_MANAGER: {
     dashboard: "view",
-    patients: "view",
+    seniors: "view",
     relatives: "none",
     "care-managers": "view",
     vendors: "view",
@@ -44,9 +44,9 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     medications: "full",
     "plan-service-requests": "full",
   },
-  PATIENT: {
+  SENIOR: {
     dashboard: "view",
-    patients: "view",
+    seniors: "view",
     relatives: "view",
     "care-managers": "view",
     vendors: "view",
@@ -61,9 +61,9 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     medications: "view",
     "plan-service-requests": "full",
   },
-  PATIENT_RELATIVE: {
+  SENIOR_RELATIVE: {
     dashboard: "view",
-    patients: "view",
+    seniors: "view",
     relatives: "view",
     "care-managers": "view",
     vendors: "view",
@@ -81,7 +81,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
 };
 
 export function getAccess(role: string | null, module: AppModule): AccessLevel {
-  const r = (role || "PATIENT") as AppRole;
+  const r = (role || "SENIOR") as AppRole;
   return permissionsMatrix[r]?.[module] ?? "none";
 }
 
@@ -96,7 +96,7 @@ export function canEdit(role: string | null, module: AppModule): boolean {
 // Map sidebar URLs to modules
 const urlToModule: Record<string, AppModule> = {
   "/": "dashboard",
-  "/patients": "patients",
+  "/seniors": "seniors",
   "/relatives": "relatives",
   "/care-managers": "care-managers",
   "/vendors": "vendors",

@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useApiGet, useApiList, useApiCreate, useApiUpdate, useApiDelete } from "@/hooks/useApi";
-import { Patient, VitalRecord, CareVisit, Task, EmergencyAlert, Relative, EmergencyContact } from "@/types";
+import { Senior, VitalRecord, CareVisit, Task, EmergencyAlert, Relative, EmergencyContact } from "@/types";
 import { AddressDisplay } from "@/components/AddressDisplay";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ArrowLeft } from "lucide-react";
@@ -13,11 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
-export default function PatientDetailPage() {
+export default function SeniorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { data: patient, isLoading: lp } = useApiGet<Patient>(`patient-${id}`, `/patients/${id}`, !!id);
+  const { data: senior, isLoading: lp } = useApiGet<Senior>(`senior-${id}`, `/seniors/${id}`, !!id);
   const { data: vitals = [], isLoading: lv } = useApiList<VitalRecord>("vitals", "/vitals");
   const { data: visits = [], isLoading: lvs } = useApiList<CareVisit>("visits", "/care-visits");
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
@@ -43,21 +43,21 @@ export default function PatientDetailPage() {
     );
   }
 
-  if (!patient) {
+  if (!senior) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Patient not found</p>
+        <p className="text-muted-foreground">Senior not found</p>
       </div>
     );
   }
 
-  // Filter related data by patient id
-  const pid = String(patient.id);
+  // Filter related data by senior id
+  const pid = String(senior.id);
   const myVitals = vitals.filter(v => v.patient_id === pid);
   const myVisits = visits.filter(v => v.patient_id === pid);
   const myTasks = tasks.filter(t => t.patient_id === pid);
   const myEmergencies = emergencies.filter(e => String(e.patient_id) === pid);
-  const myRelatives = relatives.filter(r => String(r.patient_id) === String(patient.user_id));
+  const myRelatives = relatives.filter(r => String(r.patient_id) === String(senior.user_id));
   const myContacts = Array.isArray(contacts) ? contacts : (contacts && typeof contacts === 'object' && Object.keys(contacts).length > 0 ? [contacts] : []);
 
   const openAddContact = () => {
@@ -86,11 +86,11 @@ export default function PatientDetailPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{patient.full_name}</h1>
-          <p className="text-sm text-muted-foreground">ID: {patient.id} · {patient.age ? `${patient.age}y` : "NA"} · {patient.gender}</p>
+          <h1 className="text-2xl font-bold text-foreground">{senior.full_name}</h1>
+          <p className="text-sm text-muted-foreground">ID: {senior.id} · {senior.age ? `${senior.age}y` : "NA"} · {senior.gender}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <StatusBadge status={patient.risk_category || "Low"} />
+          <StatusBadge status={senior.risk_category || "Low"} />
         </div>
       </div>
 
@@ -117,18 +117,18 @@ export default function PatientDetailPage() {
             <h3 className="text-sm font-semibold text-foreground mb-4">Personal Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { label: "Full Name", value: patient.full_name },
-                { label: "Date of Birth", value: patient.dob },
-                { label: "Age", value: patient.age ? `${patient.age} years` : "NA" },
-                { label: "Gender", value: patient.gender },
-                { label: "Blood Group", value: patient.blood_group },
-                { label: "Weight", value: patient.weight ? `${patient.weight} kg` : "N/A" },
-                { label: "Phone", value: patient.user?.phone || "N/A" },
-                { label: "Email", value: patient.user?.email || "N/A" },
-                { label: "Address", value: patient.address },
-                { label: "Living Situation", value: patient.living_situation },
-                { label: "Primary Language", value: patient.primary_language },
-                { label: "Care Manager", value: patient.care_manager?.name || "N/A" },
+                { label: "Full Name", value: senior.full_name },
+                { label: "Date of Birth", value: senior.dob },
+                { label: "Age", value: senior.age ? `${senior.age} years` : "NA" },
+                { label: "Gender", value: senior.gender },
+                { label: "Blood Group", value: senior.blood_group },
+                { label: "Weight", value: senior.weight ? `${senior.weight} kg` : "N/A" },
+                { label: "Phone", value: senior.user?.phone || "N/A" },
+                { label: "Email", value: senior.user?.email || "N/A" },
+                { label: "Address", value: senior.address },
+                { label: "Living Situation", value: senior.living_situation },
+                { label: "Primary Language", value: senior.primary_language },
+                { label: "Care Manager", value: senior.care_manager?.name || "N/A" },
               ].map(item => (
                 <div key={item.label}>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -142,15 +142,15 @@ export default function PatientDetailPage() {
         <TabsContent value="family">
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
             <h3 className="text-sm font-semibold text-foreground mb-4">Family Background</h3>
-            {patient.family ? (
+            {senior.family ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
-                  { label: "Children Living In", value: patient.family.children_location?.replace('_', ' ') },
-                  { label: "Visit Frequency", value: patient.family.visit_frequency },
-                  { label: "Who Receives Updates", value: patient.family.update_receiver },
-                  { label: "Preferred Communication", value: patient.family.communication_mode },
-                  { label: "Associated Relative", value: patient.relative_user?.name },
-                  { label: "Relative Phone", value: patient.relative_user?.phone },
+                  { label: "Children Living In", value: senior.family.children_location?.replace('_', ' ') },
+                  { label: "Visit Frequency", value: senior.family.visit_frequency },
+                  { label: "Who Receives Updates", value: senior.family.update_receiver },
+                  { label: "Preferred Communication", value: senior.family.communication_mode },
+                  { label: "Associated Relative", value: senior.relative_user?.name },
+                  { label: "Relative Phone", value: senior.relative_user?.phone },
                 ].map(item => (
                   <div key={item.label}>
                     <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -169,12 +169,12 @@ export default function PatientDetailPage() {
             <h3 className="text-sm font-semibold text-foreground mb-4">Medical & Clinical Baseline</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {[
-                { label: "Primary Diagnosis", value: patient.primary_diagnosis },
-                { label: "Secondary Diagnosis", value: patient.secondary_diagnosis },
-                { label: "Allergies", value: patient.allergies },
-                { label: "Current Medications", value: patient.current_medications },
-                { label: "Past Surgeries", value: patient.past_surgeries },
-                { label: "Risk Category", value: patient.risk_category },
+                { label: "Primary Diagnosis", value: senior.primary_diagnosis },
+                { label: "Secondary Diagnosis", value: senior.secondary_diagnosis },
+                { label: "Allergies", value: senior.allergies },
+                { label: "Current Medications", value: senior.current_medications },
+                { label: "Past Surgeries", value: senior.past_surgeries },
+                { label: "Risk Category", value: senior.risk_category },
               ].map(item => (
                 <div key={item.label}>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -183,7 +183,7 @@ export default function PatientDetailPage() {
               ))}
             </div>
 
-            {patient.medical && (
+            {senior.medical && (
               <>
                 <div className="h-px bg-border/50 my-6" />
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">Assessment Details</h4>
@@ -191,15 +191,15 @@ export default function PatientDetailPage() {
                   {[
                     { label: "Existing Conditions", value: (() => {
                         try {
-                          const conditions = JSON.parse(patient.medical.conditions || "[]");
-                          return Array.isArray(conditions) ? conditions.join(", ") : patient.medical.conditions;
-                        } catch { return patient.medical.conditions; }
+                          const conditions = JSON.parse(senior.medical.conditions || "[]");
+                          return Array.isArray(conditions) ? conditions.join(", ") : senior.medical.conditions;
+                        } catch { return senior.medical.conditions; }
                       })() 
                     },
-                    { label: "Medication Reminders", value: patient.medical.medicine_reminder ? "Yes" : "No" },
-                    { label: "Recent Hospitalization", value: patient.medical.hospitalization ? "Yes" : "No" },
-                    { label: "Preferred Doctor", value: patient.medical.preferred_doctor },
-                    { label: "Preferred Hospital", value: patient.medical.preferred_hospital },
+                    { label: "Medication Reminders", value: senior.medical.medicine_reminder ? "Yes" : "No" },
+                    { label: "Recent Hospitalization", value: senior.medical.hospitalization ? "Yes" : "No" },
+                    { label: "Preferred Doctor", value: senior.medical.preferred_doctor },
+                    { label: "Preferred Hospital", value: senior.medical.preferred_hospital },
                   ].map(item => (
                     <div key={item.label}>
                       <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -215,16 +215,16 @@ export default function PatientDetailPage() {
         <TabsContent value="mobility">
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
             <h3 className="text-sm font-semibold text-foreground mb-4">Mobility & Daily Living</h3>
-            {patient.mobility ? (
+            {senior.mobility ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="p-3 rounded-lg bg-secondary/20 border border-border/50">
                     <p className="text-xs text-muted-foreground">Walking Status</p>
-                    <p className="text-sm font-bold text-primary mt-0.5 capitalize">{patient.mobility.walking_status}</p>
+                    <p className="text-sm font-bold text-primary mt-0.5 capitalize">{senior.mobility.walking_status}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-secondary/20 border border-border/50">
                     <p className="text-xs text-muted-foreground">Caregiver Needed</p>
-                    <p className="text-sm font-bold text-primary mt-0.5">{patient.mobility.caregiver_needed ? "Yes" : "No"}</p>
+                    <p className="text-sm font-bold text-primary mt-0.5">{senior.mobility.caregiver_needed ? "Yes" : "No"}</p>
                   </div>
                 </div>
                 
@@ -232,10 +232,10 @@ export default function PatientDetailPage() {
                   <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Activities of Daily Living (Independent?)</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                      { label: "Bathing", value: patient.mobility.bath },
-                      { label: "Washroom", value: patient.mobility.washroom },
-                      { label: "Dressing", value: patient.mobility.dressing },
-                      { label: "Cooking", value: patient.mobility.cooking },
+                      { label: "Bathing", value: senior.mobility.bath },
+                      { label: "Washroom", value: senior.mobility.washroom },
+                      { label: "Dressing", value: senior.mobility.dressing },
+                      { label: "Cooking", value: senior.mobility.cooking },
                     ].map(item => (
                       <div key={item.label} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
                         <span className="text-sm font-medium">{item.label}</span>
@@ -254,15 +254,15 @@ export default function PatientDetailPage() {
         <TabsContent value="fall-risk">
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
             <h3 className="text-sm font-semibold text-foreground mb-4">Fall Risk & Home Safety</h3>
-            {patient.fall_risk ? (
+            {senior.fall_risk ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[
-                    { label: "History of Falls", value: patient.fall_risk.fall_history ? "Yes (Last 6 Months)" : "No" },
-                    { label: "Walking Aid", value: patient.fall_risk.walking_aid },
-                    { label: "House Type", value: patient.fall_risk.house_type },
-                    { label: "Floor", value: patient.fall_risk.floor },
-                    { label: "Lift Available", value: patient.fall_risk.lift ? "Yes" : "No" },
+                    { label: "History of Falls", value: senior.fall_risk.fall_history ? "Yes (Last 6 Months)" : "No" },
+                    { label: "Walking Aid", value: senior.fall_risk.walking_aid },
+                    { label: "House Type", value: senior.fall_risk.house_type },
+                    { label: "Floor", value: senior.fall_risk.floor },
+                    { label: "Lift Available", value: senior.fall_risk.lift ? "Yes" : "No" },
                   ].map(item => (
                     <div key={item.label}>
                       <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -277,9 +277,9 @@ export default function PatientDetailPage() {
                   <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Home Safety Checklist</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
-                      { label: "Slippery Floors", value: patient.fall_risk.slippery_floor, danger: true },
-                      { label: "Stairs in Home", value: patient.fall_risk.stairs, danger: true },
-                      { label: "Grab Bars Installed", value: patient.fall_risk.grab_bars, danger: false },
+                      { label: "Slippery Floors", value: senior.fall_risk.slippery_floor, danger: true },
+                      { label: "Stairs in Home", value: senior.fall_risk.stairs, danger: true },
+                      { label: "Grab Bars Installed", value: senior.fall_risk.grab_bars, danger: false },
                     ].map(item => (
                       <div key={item.label} className="flex items-center justify-between p-3 rounded-lg border border-border/50">
                         <span className="text-sm font-medium">{item.label}</span>
@@ -300,24 +300,24 @@ export default function PatientDetailPage() {
         <TabsContent value="social">
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
             <h3 className="text-sm font-semibold text-foreground mb-4">Social & Emotional Wellbeing</h3>
-            {patient.social ? (
+            {senior.social ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <p className="text-xs text-muted-foreground">Family Contact Frequency</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5 capitalize">{patient.social.family_contact}</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5 capitalize">{senior.social.family_contact}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Feels Lonely?</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-sm font-bold ${patient.social.lonely ? "text-destructive" : "text-green-600"}`}>
-                      {patient.social.lonely ? "Yes" : "No"}
+                    <span className={`text-sm font-bold ${senior.social.lonely ? "text-destructive" : "text-green-600"}`}>
+                      {senior.social.lonely ? "Yes" : "No"}
                     </span>
                   </div>
                 </div>
                 <div className="sm:col-span-2 lg:col-span-3">
                   <p className="text-xs text-muted-foreground">Hobbies & Interests</p>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {patient.social.hobbies?.split(',').map(hobby => (
+                    {senior.social.hobbies?.split(',').map(hobby => (
                       <span key={hobby} className="px-3 py-1 bg-secondary/30 rounded-full text-xs font-medium border border-border/50">
                         {hobby.trim()}
                       </span>
@@ -334,16 +334,16 @@ export default function PatientDetailPage() {
         <TabsContent value="lifestyle">
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
             <h3 className="text-sm font-semibold text-foreground mb-4">Nutrition & Lifestyle</h3>
-            {patient.lifestyle ? (
+            {senior.lifestyle ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="p-4 rounded-lg border border-border/50 bg-secondary/10">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Diet Type</p>
-                  <p className="text-lg font-semibold text-primary capitalize">{patient.lifestyle.diet}</p>
+                  <p className="text-lg font-semibold text-primary capitalize">{senior.lifestyle.diet}</p>
                 </div>
                 <div className="p-4 rounded-lg border border-border/50 bg-secondary/10">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Addictions</p>
-                  <p className={`text-lg font-semibold capitalize ${patient.lifestyle.addiction === 'none' ? 'text-green-600' : 'text-destructive'}`}>
-                    {patient.lifestyle.addiction}
+                  <p className={`text-lg font-semibold capitalize ${senior.lifestyle.addiction === 'none' ? 'text-green-600' : 'text-destructive'}`}>
+                    {senior.lifestyle.addiction}
                   </p>
                 </div>
               </div>
@@ -368,7 +368,7 @@ export default function PatientDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(patient.care_plans || []).map(plan => (
+                  {(senior.care_plans || []).map(plan => (
                     <tr key={plan.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/10 transition-colors">
                       <td className="p-3 text-sm font-medium">{plan.plan_type}</td>
                       <td className="p-3 text-sm text-muted-foreground">
@@ -379,7 +379,7 @@ export default function PatientDetailPage() {
                       <td className="p-3 text-sm text-muted-foreground italic">{plan.notes || "—"}</td>
                     </tr>
                   ))}
-                  {(!patient.care_plans || patient.care_plans.length === 0) && (
+                  {(!senior.care_plans || senior.care_plans.length === 0) && (
                     <tr><td colSpan={5} className="p-8 text-center text-sm text-muted-foreground italic">No active care plans found.</td></tr>
                   )}
                 </tbody>
@@ -457,20 +457,20 @@ export default function PatientDetailPage() {
         <TabsContent value="emergency">
           <div className="space-y-6">
             {/* Assessment Emergency Details */}
-            {patient.emergency && (
+            {senior.emergency && (
               <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
                 <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">Assessment Data</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[
-                    { label: "Family Doctor", value: patient.emergency.family_doctor },
-                    { label: "Preferred Hospital", value: patient.emergency.hospital },
-                    { label: "Insurance Available", value: patient.emergency.insurance ? "Yes" : "No" },
-                    { label: "Insurance Details", value: patient.emergency.insurance_details },
-                    { label: "Consent for Emergency Intervention", value: patient.emergency.consent ? "Granted" : "Not Granted" },
+                    { label: "Family Doctor", value: senior.emergency.family_doctor },
+                    { label: "Preferred Hospital", value: senior.emergency.hospital },
+                    { label: "Insurance Available", value: senior.emergency.insurance ? "Yes" : "No" },
+                    { label: "Insurance Details", value: senior.emergency.insurance_details },
+                    { label: "Consent for Emergency Intervention", value: senior.emergency.consent ? "Granted" : "Not Granted" },
                   ].map(item => (
                     <div key={item.label}>
                       <p className="text-xs text-muted-foreground">{item.label}</p>
-                      <p className={`text-sm font-medium mt-0.5 ${item.label === "Consent for Emergency Intervention" ? (patient.emergency?.consent ? "text-green-600" : "text-destructive") : "text-foreground"}`}>
+                      <p className={`text-sm font-medium mt-0.5 ${item.label === "Consent for Emergency Intervention" ? (senior.emergency?.consent ? "text-green-600" : "text-destructive") : "text-foreground"}`}>
                         {item.value || "—"}
                       </p>
                     </div>
@@ -569,7 +569,7 @@ export default function PatientDetailPage() {
                     )}
                   </div>
                 ))}
-                {myEmergencies.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No emergency alerts recorded for this patient.</p>}
+                {myEmergencies.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No emergency alerts recorded for this senior.</p>}
               </div>
             </div> */}
           </div>

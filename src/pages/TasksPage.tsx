@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { Task, Patient, CareManager, ApiUser, Relative } from "@/types";
+import { Task, Senior, CareManager, ApiUser, Relative } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
@@ -32,7 +32,7 @@ export default function TasksPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "tasks");
   const { data: tasks = [], isLoading, isError, error } = useApiList<Task>("tasks", "/tasks");
-  const { data: patients = [] } = useApiList<Patient>("patients", "/patients");
+  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
   const { data: cms = [] } = useApiList<CareManager>("care-managers", "/care-managers");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
   const { data: relatives = [] } = useApiList<Relative>("relatives", "/relatives");
@@ -49,10 +49,10 @@ export default function TasksPage() {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("Care Manager");
 
-  const getPatientName = (id: string | number) => {
+  const getSeniorName = (id: string | number) => {
     if (!id) return "N/A";
-    const p = patients.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
-    return p?.full_name || `Patient #${id}`;
+    const p = seniors.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
+    return p?.full_name || `Senior #${id}`;
   };
 
   const getCMName = (id: string | number) => {
@@ -69,7 +69,7 @@ export default function TasksPage() {
 
   const filtered = useMemo(() => {
     return tasks.filter(t => {
-      const pName = t.patient_id ? getPatientName(t.patient_id) : "";
+      const pName = t.patient_id ? getSeniorName(t.patient_id) : "";
       const cmName = t.care_manager_id ? getCMName(t.care_manager_id) : "";
       const relName = t.relative_id ? getRelativeName(t.relative_id) : "";
       
@@ -83,7 +83,7 @@ export default function TasksPage() {
       const matchesTab = t.category === activeTab || (!t.category && activeTab === "Care Manager");
       return matchesSearch && matchesStatus && matchesTab;
     });
-  }, [tasks, search, filterStatus, activeTab, patients, cms, relatives]);
+  }, [tasks, search, filterStatus, activeTab, seniors, cms, relatives]);
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
@@ -119,11 +119,11 @@ export default function TasksPage() {
     setEditingTask(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
-  const handlePatientChange = (patientUserId: string) => {
-    const p = patients.find(p => String(p.user_id) === String(patientUserId));
+  const handleSeniorChange = (seniorUserId: string) => {
+    const p = seniors.find(p => String(p.user_id) === String(seniorUserId));
     setEditingTask(prev => {
       if (!prev) return prev;
-      const updates: Partial<Task> = { ...prev, patient_id: patientUserId };
+      const updates: Partial<Task> = { ...prev, patient_id: seniorUserId };
       
       if (p) {
         // Auto-select Care Manager
@@ -192,7 +192,7 @@ export default function TasksPage() {
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Task</th>
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">Patient</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Senior</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">{activeTab === "Care Manager" ? "Care Manager" : "Relative"}</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Due Date</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Priority</th>
@@ -206,7 +206,7 @@ export default function TasksPage() {
               ) : paged.map(t => (
                 <tr key={t.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{t.title}</td>
-                  <td className="p-4 text-sm text-foreground">{t.patient_id ? getPatientName(t.patient_id) : "—"}</td>
+                  <td className="p-4 text-sm text-foreground">{t.patient_id ? getSeniorName(t.patient_id) : "—"}</td>
                   <td className="p-4 text-sm text-foreground">
                     {t.category === "Relative" 
                       ? (t.relative_id ? getRelativeName(t.relative_id) : "—")
@@ -240,7 +240,7 @@ export default function TasksPage() {
                 <div><p className="text-xs text-muted-foreground">Title</p><p className="text-sm font-medium">{viewingTask.title}</p></div>
                 <div><p className="text-xs text-muted-foreground">Due Date</p><p className="text-sm font-medium">{formatDate(viewingTask.due_date)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Task Time</p><p className="text-sm font-medium">{viewingTask.task_time || "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{viewingTask.patient_id ? getPatientName(viewingTask.patient_id) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{viewingTask.patient_id ? getSeniorName(viewingTask.patient_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewingTask.care_manager_id ? getCMName(viewingTask.care_manager_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Priority</p><StatusBadge status={viewingTask.priority} /></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingTask.status} /></div>
@@ -269,16 +269,16 @@ export default function TasksPage() {
               <Textarea value={editingTask?.description || ""} onChange={e => updateField("description", e.target.value)} rows={3} placeholder="Describe the task details..." />
             </div>
             <div className="space-y-2">
-              <Label>Patient</Label>
+              <Label>Senior</Label>
               <Select 
                 value={editingTask?.patient_id ? (() => {
-                  const p = patients.find(p => String(p.id) === String(editingTask.patient_id) || String(p.user_id) === String(editingTask.patient_id));
+                  const p = seniors.find(p => String(p.id) === String(editingTask.patient_id) || String(p.user_id) === String(editingTask.patient_id));
                   return p ? String(p.user_id) : String(editingTask.patient_id);
                 })() : ""} 
-                onValueChange={handlePatientChange}
+                onValueChange={handleSeniorChange}
               >
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{seniors.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -298,33 +298,33 @@ export default function TasksPage() {
                   <SelectTrigger><SelectValue placeholder="Select Relative..." /></SelectTrigger>
                   <SelectContent>
                     {(() => {
-                      const selectedPatient = patients.find(p => String(p.user_id) === String(editingTask?.patient_id));
+                      const selectedSenior = seniors.find(p => String(p.user_id) === String(editingTask?.patient_id));
                       
-                      const patientRelatives = relatives.filter(r => 
+                      const seniorRelatives = relatives.filter(r => 
                         String(r.patient_id) === String(editingTask?.patient_id) || 
-                        (selectedPatient && String(r.patient_id) === String(selectedPatient.id)) ||
-                        (selectedPatient && String(r.user_id) === String(selectedPatient.patient_relatives_id))
+                        (selectedSenior && String(r.patient_id) === String(selectedSenior.id)) ||
+                        (selectedSenior && String(r.user_id) === String(selectedSenior.patient_relatives_id))
                       );
 
-                      // If patient has a relative_user but it's not in the filtered list, add it as a virtual option
-                      if (selectedPatient?.relative_user && !patientRelatives.some(r => String(r.user_id) === String(selectedPatient.relative_user?.id))) {
+                      // If senior has a relative_user but it's not in the filtered list, add it as a virtual option
+                      if (selectedSenior?.relative_user && !seniorRelatives.some(r => String(r.user_id) === String(selectedSenior.relative_user?.id))) {
                         return (
                           <>
-                            <SelectItem key={`rel-user-${selectedPatient.relative_user.id}`} value={String(selectedPatient.patient_relatives_id || selectedPatient.relative_user.id)}>
-                              {selectedPatient.relative_user.name}
+                            <SelectItem key={`rel-user-${selectedSenior.relative_user.id}`} value={String(selectedSenior.patient_relatives_id || selectedSenior.relative_user.id)}>
+                              {selectedSenior.relative_user.name}
                             </SelectItem>
-                            {patientRelatives.map(r => (
+                            {seniorRelatives.map(r => (
                               <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
                             ))}
                           </>
                         );
                       }
                       
-                      if (patientRelatives.length === 0) {
-                        return <SelectItem value="none" disabled>No relatives found for this patient</SelectItem>;
+                      if (seniorRelatives.length === 0) {
+                        return <SelectItem value="none" disabled>No relatives found for this senior</SelectItem>;
                       }
                       
-                      return patientRelatives.map(r => (
+                      return seniorRelatives.map(r => (
                         <SelectItem key={r.id} value={String(r.id)}>{r.relative_name} ({r.relationship})</SelectItem>
                       ));
                     })()}

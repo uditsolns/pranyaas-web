@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { VitalRecord, Patient, CareVisit, ApiUser } from "@/types";
+import { VitalRecord, Senior, CareVisit, ApiUser } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -27,7 +27,7 @@ export default function VitalsPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "vitals");
   const { data: vitals = [], isLoading } = useApiList<VitalRecord>("vitals", "/vitals");
-  const { data: patients = [] } = useApiList<Patient>("patients", "/patients");
+  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
   const { data: careVisits = [] } = useApiList<CareVisit>("care-visits", "/care-visits");
   const recorders = users.filter(u => String(u.role_id) === "1" || String(u.role_id) === "2");
@@ -41,7 +41,7 @@ export default function VitalsPage() {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const filtered = vitals.filter(v => {
-    const pName = patients.find(p => String(p.user_id) === String(v.patient_id))?.full_name || "";
+    const pName = seniors.find(p => String(p.user_id) === String(v.patient_id))?.full_name || "";
     return pName.toLowerCase().includes(search.toLowerCase());
   });
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
@@ -68,7 +68,7 @@ export default function VitalsPage() {
     setEditingVital(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
-  const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
+  const getSeniorName = (id: string) => seniors.find(p => String(p.user_id) === String(id))?.full_name || `Senior #${id}`;
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -84,7 +84,7 @@ export default function VitalsPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by patient..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+          <Input placeholder="Search by senior..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export default function VitalsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
-                {["Patient", "Temperature", "Heart Rate", "BP", "Sugar Level", "Recorded At", "Actions"].map(h => (
+                {["Senior", "Temperature", "Heart Rate", "BP", "Sugar Level", "Recorded At", "Actions"].map(h => (
                   <th key={h} className={`text-xs font-medium text-muted-foreground p-3 ${h === "Actions" ? "text-right" : "text-left"}`}>{h}</th>
                 ))}
               </tr>
@@ -103,7 +103,7 @@ export default function VitalsPage() {
                 <tr><td colSpan={7}><EmptyState title="No vitals recorded" /></td></tr>
               ) : paged.map(v => (
                 <tr key={v.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
-                  <td className="p-3 text-sm font-medium text-foreground">{getPatientName(v.patient_id)}</td>
+                  <td className="p-3 text-sm font-medium text-foreground">{getSeniorName(v.patient_id)}</td>
                   <td className="p-3 text-sm">{v.temperature || "—"}</td>
                   <td className="p-3 text-sm">{v.heart_rate || "—"}</td>
                   <td className="p-3 text-sm">{v.bp || "—"}</td>
@@ -128,16 +128,16 @@ export default function VitalsPage() {
           <DialogHeader><DialogTitle>{editingVital?.id ? "Edit Vitals" : "Record Vitals"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2 sm:col-span-2">
-              <Label>Patient <span className="text-destructive">*</span></Label>
+              <Label>Senior <span className="text-destructive">*</span></Label>
               <Select 
                 value={editingVital?.patient_id ? (() => {
-                  const p = patients.find(p => String(p.id) === String(editingVital.patient_id) || String(p.user_id) === String(editingVital.patient_id));
+                  const p = seniors.find(p => String(p.id) === String(editingVital.patient_id) || String(p.user_id) === String(editingVital.patient_id));
                   return p ? String(p.user_id) : String(editingVital.patient_id);
                 })() : ""} 
                 onValueChange={v => updateField("patient_id", v)}
               >
-                <SelectTrigger><SelectValue placeholder="Select patient..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectTrigger><SelectValue placeholder="Select senior..." /></SelectTrigger>
+                <SelectContent>{seniors.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

@@ -5,11 +5,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useApiGet, useApiList } from "@/hooks/useApi";
 import { QuoteCard } from "@/components/QuoteCard";
 import { CareVisit, EmergencyAlert } from "@/types";
-import { patientGrowthData, visitActivityData, emergencyTrendsData } from "@/data/mock";
+import { seniorGrowthData, visitActivityData, emergencyTrendsData } from "@/data/mock";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface DashboardCounts {
-  patient_count?: number;
+  senior_count?: number;
   emergency_count?: number;
   missed_caretakers?: number;
   pending_tasks?: number;
@@ -21,7 +21,7 @@ export default function AdminDashboard() {
   const { data: visits = [] } = useApiList<CareVisit>("care-visits", "/care-visits");
   const { data: emergencies = [] } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
 
-  const patientsCount = dashboard?.patient_count ?? 0;
+  const seniorsCount = dashboard?.senior_count ?? 0;
   const cmsCount = dashboard?.missed_caretakers ?? 0;
   const tasksCount = dashboard?.pending_tasks ?? 0;
   const visitsCount = visits.length;
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard title="Total Patients" value={patientsCount} icon={Users} variant="primary" />
+        <StatCard title="Total Seniors" value={seniorsCount} icon={Users} variant="primary" />
         <StatCard title="Care Managers" value={cmsCount} icon={UserCog} variant="success" />
         <StatCard title="Tasks" value={tasksCount} icon={ClipboardList} variant="warning" />
         <StatCard title="Visits" value={visitsCount} icon={Calendar} variant="accent" />
@@ -50,14 +50,14 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-card rounded-xl p-5 card-shadow border border-border/50">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Patient Growth</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Senior Growth</h3>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={patientGrowthData}>
+            <AreaChart data={seniorGrowthData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
               <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
               <Tooltip />
-              <Area type="monotone" dataKey="patients" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.1)" strokeWidth={2} />
+              <Area type="monotone" dataKey="seniors" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.1)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

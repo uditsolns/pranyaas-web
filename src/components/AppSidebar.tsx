@@ -15,7 +15,7 @@ import {
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Patients", url: "/patients", icon: Users },
+  { title: "Seniors", url: "/seniors", icon: Users },
   { title: "Relatives", url: "/relatives", icon: Heart },
   { title: "Care Managers", url: "/care-managers", icon: UserCog },
   { title: "Vendors", url: "/vendors", icon: Building2 },

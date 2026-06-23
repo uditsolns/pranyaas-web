@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { EmergencyAlert, Patient } from "@/types";
+import { EmergencyAlert, Senior } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AlertTriangle, CheckCircle, Clock, Eye, Loader2, Search, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { canEdit } from "@/lib/permissions";
 
 export default function EmergenciesPage() {
   const { data: emergencies = [], isLoading } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
-  const { data: patients = [] } = useApiList<Patient>("patients", "/patients");
+  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
   const { role } = useAuth();
   const hasEdit = canEdit(role, "emergencies");
   const updateMutation = useApiUpdate<EmergencyAlert>("emergency-alerts", "/emergency-alerts", "Emergency");
@@ -60,12 +60,12 @@ export default function EmergenciesPage() {
     }
   };
 
-  const getPatientName = (id: string) => patients.find(p => String(p.user_id) === String(id))?.full_name || `Patient #${id}`;
+  const getSeniorName = (id: string) => seniors.find(p => String(p.user_id) === String(id))?.full_name || `Senior #${id}`;
 
   const filtered = emergencies.filter(e => {
     const matchesSearch = String(e.id).includes(search) ||
       (e.triggered_by || "").toLowerCase().includes(search.toLowerCase()) ||
-      getPatientName(e.patient_id).toLowerCase().includes(search.toLowerCase());
+      getSeniorName(e.patient_id).toLowerCase().includes(search.toLowerCase());
     const matchesStatus = filterStatus === "all" || e.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -114,7 +114,7 @@ export default function EmergenciesPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by ID, trigger, or patient..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+          <Input placeholder="Search by ID, trigger, or senior..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
         <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setPage(1); }}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -140,7 +140,7 @@ export default function EmergenciesPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">Emergency #{e.id}</p>
-                    <p className="text-xs text-muted-foreground">Triggered by: {e.triggered_by} · {getPatientName(e.patient_id)}</p>
+                    <p className="text-xs text-muted-foreground">Triggered by: {e.triggered_by} · {getSeniorName(e.patient_id)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -158,23 +158,23 @@ export default function EmergenciesPage() {
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-border/50">
                 <div>
                   <p className="text-xs text-muted-foreground">Care Manager</p>
-                  <p className="text-sm font-semibold text-foreground">{e.patient?.care_manager?.name || "—"}</p>
-                  <p className="text-xs text-muted-foreground">{e.patient?.care_manager?.phone || "—"}</p>
+                  <p className="text-sm font-semibold text-foreground">{e.senior?.care_manager?.name || "—"}</p>
+                  <p className="text-xs text-muted-foreground">{e.senior?.care_manager?.phone || "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Relative</p>
-                  <p className="text-sm font-semibold text-foreground">{e.patient?.emergency_contacts?.[0]?.name || "—"}</p>
+                  <p className="text-sm font-semibold text-foreground">{e.senior?.emergency_contacts?.[0]?.name || "—"}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className="text-xs text-muted-foreground">{e.patient?.emergency_contacts?.[0]?.phone || "—"}</p>
-                    {(e.patient?.emergency_contacts?.length ?? 0) > 0 && (
+                    <p className="text-xs text-muted-foreground">{e.senior?.emergency_contacts?.[0]?.phone || "—"}</p>
+                    {(e.senior?.emergency_contacts?.length ?? 0) > 0 && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="h-5 px-1.5 text-primary bg-primary/5 hover:bg-black hover:text-white gap-1 rounded-md transition-all" 
-                        onClick={() => { setViewingContacts(e.patient?.emergency_contacts || []); setRelativesOpen(true); }}
+                        onClick={() => { setViewingContacts(e.senior?.emergency_contacts || []); setRelativesOpen(true); }}
                       >
-                        {(e.patient?.emergency_contacts?.length ?? 0) > 1 && (
-                          <span className="text-[10px] font-bold">+{e.patient!.emergency_contacts!.length - 1} more</span>
+                        {(e.senior?.emergency_contacts?.length ?? 0) > 1 && (
+                          <span className="text-[10px] font-bold">+{e.senior!.emergency_contacts!.length - 1} more</span>
                         )}
                         <Eye className="h-3 w-3" />
                       </Button>
@@ -215,18 +215,18 @@ export default function EmergenciesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Triggered By</p><p className="text-sm font-medium">{viewing.triggered_by}</p></div>
-                <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewing.patient_id)}</p></div>
-                <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewing.patient?.care_manager?.name || "—"} ({viewing.patient?.care_manager?.phone || "—"})</p></div>
+                <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{getSeniorName(viewing.patient_id)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewing.senior?.care_manager?.name || "—"} ({viewing.senior?.care_manager?.phone || "—"})</p></div>
                 <div>
                   <p className="text-xs text-muted-foreground">Relative</p>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">
-                      {viewing.patient?.emergency_contacts?.[0]?.name || "—"} 
-                      {viewing.patient?.emergency_contacts?.[0]?.phone ? ` (${viewing.patient.emergency_contacts[0].phone})` : ""}
+                      {viewing.senior?.emergency_contacts?.[0]?.name || "—"} 
+                      {viewing.senior?.emergency_contacts?.[0]?.phone ? ` (${viewing.senior.emergency_contacts[0].phone})` : ""}
                     </p>
-                    {(viewing.patient?.emergency_contacts?.length ?? 0) > 1 && (
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => { setViewingContacts(viewing.patient?.emergency_contacts || []); setRelativesOpen(true); }}>
-                        View All ({viewing.patient?.emergency_contacts?.length})
+                    {(viewing.senior?.emergency_contacts?.length ?? 0) > 1 && (
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => { setViewingContacts(viewing.senior?.emergency_contacts || []); setRelativesOpen(true); }}>
+                        View All ({viewing.senior?.emergency_contacts?.length})
                       </Button>
                     )}
                   </div>
@@ -287,16 +287,16 @@ export default function EmergenciesPage() {
           <DialogHeader><DialogTitle>{isEditing ? "Edit Emergency" : "Add Emergency"}</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Patient <span className="text-destructive">*</span></Label>
+              <Label>Senior <span className="text-destructive">*</span></Label>
               <Select 
                 value={editingItem?.patient_id ? (() => {
-                  const p = patients.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
+                  const p = seniors.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
                   return p ? String(p.user_id) : String(editingItem.patient_id);
                 })() : ""} 
                 onValueChange={v => setEditingItem(prev => ({ ...prev!, patient_id: v }))}
               >
-                <SelectTrigger><SelectValue placeholder="Select Patient..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectTrigger><SelectValue placeholder="Select Senior..." /></SelectTrigger>
+                <SelectContent>{seniors.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

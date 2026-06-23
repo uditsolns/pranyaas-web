@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { CareVisit, Patient, CareManager } from "@/types";
+import { CareVisit, Senior, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Calendar as CalendarIcon, Loader2 } from "lucide-react";
@@ -29,7 +29,7 @@ export default function VisitsPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "visits");
   const { data: visits = [], isLoading } = useApiList<CareVisit>("care-visits", "/care-visits");
-  const { data: patients = [] } = useApiList<Patient>("patients", "/patients");
+  const { data: seniors = [] } = useApiList<Senior>("seniors", "/seniors");
   const { data: cms = [] } = useApiList<CareManager>("care-managers", "/care-managers");
   const createMutation = useApiCreate<CareVisit>("care-visits", "/care-visits", "Visit");
   const updateMutation = useApiUpdatePost<CareVisit>("care-visits", "/care-visits", "Visit");
@@ -43,10 +43,10 @@ export default function VisitsPage() {
   const [viewingVisit, setViewingVisit] = useState<CareVisit | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
-  const getPatientName = (id: string | number) => {
+  const getSeniorName = (id: string | number) => {
     if (!id) return "N/A";
-    const p = patients.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
-    return p?.full_name || `Patient #${id}`;
+    const p = seniors.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
+    return p?.full_name || `Senior #${id}`;
   };
 
   const getCMName = (id: string | number) => {
@@ -57,7 +57,7 @@ export default function VisitsPage() {
 
   const filtered = useMemo(() => {
     return visits.filter(v => {
-      const pName = getPatientName(v.patient_id);
+      const pName = getSeniorName(v.patient_id);
       const cmName = getCMName(v.care_manager_id);
       const matchesSearch = 
         (v.visit_type || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -67,7 +67,7 @@ export default function VisitsPage() {
       const matchesType = filterType === "all" || v.visit_type === filterType;
       return matchesSearch && matchesType;
     });
-  }, [visits, patients, cms, search, filterType]);
+  }, [visits, seniors, cms, search, filterType]);
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
@@ -129,7 +129,7 @@ export default function VisitsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">Patient</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Senior</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Care Manager</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Visit Time</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Due Date</th>
@@ -143,7 +143,7 @@ export default function VisitsPage() {
                 <tr><td colSpan={7}><EmptyState title="No visits found" /></td></tr>
               ) : paged.map(v => (
                 <tr key={v.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
-                  <td className="p-4 text-sm font-medium text-foreground">{getPatientName(v.patient_id)}</td>
+                  <td className="p-4 text-sm font-medium text-foreground">{getSeniorName(v.patient_id)}</td>
                   <td className="p-4 text-sm text-foreground">{getCMName(v.care_manager_id)}</td>
                   <td className="p-4 text-sm text-foreground">{formatDateTime(v.visit_time)}</td>
                   <td className="p-4 text-sm text-foreground">{v.due_date || "—"}</td>
@@ -170,7 +170,7 @@ export default function VisitsPage() {
           {viewingVisit && (
             <div className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-xs text-muted-foreground">Patient</p><p className="text-sm font-medium">{getPatientName(viewingVisit.patient_id)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{getSeniorName(viewingVisit.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{getCMName(viewingVisit.care_manager_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Visit Time</p><p className="text-sm font-medium">{formatDateTime(viewingVisit.visit_time)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Due Date</p><p className="text-sm font-medium">{viewingVisit.due_date || "—"}</p></div>
@@ -192,10 +192,10 @@ export default function VisitsPage() {
           <DialogHeader><DialogTitle>{editingVisit?.id ? "Edit Visit" : "Schedule Visit"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
-              <Label>Patient <span className="text-destructive">*</span></Label>
+              <Label>Senior <span className="text-destructive">*</span></Label>
               <Select value={editingVisit?.patient_id || ""} onValueChange={v => updateField("patient_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>{patients.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
+                <SelectContent>{seniors.map(p => <SelectItem key={p.id} value={String(p.user_id)}>{p.full_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">

@@ -3,29 +3,29 @@ import { StatCard } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useApiGet, useApiList } from "@/hooks/useApi";
 import { QuoteCard } from "@/components/QuoteCard";
-import { Patient, CareVisit, Task, VitalRecord } from "@/types";
+import { Senior, CareVisit, Task, VitalRecord } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface PatientDashboardData {
-  patient?: Patient;
+interface SeniorDashboardData {
+  patient?: Senior;
   visits_count?: number;
   tasks_count?: number;
   [key: string]: unknown;
 }
 
-export default function PatientDashboard() {
+export default function SeniorDashboard() {
   const { user } = useAuth();
 
-  const { data: dashboard, isLoading: ld } = useApiGet<PatientDashboardData>("patient-dashboard", "/patient/dashboard");
-  const { data: patients = [], isLoading: lp } = useApiList<Patient>("patients", "/patients");
+  const { data: dashboard, isLoading: ld } = useApiGet<SeniorDashboardData>("senior-dashboard", "/senior/dashboard");
+  const { data: seniors = [], isLoading: lp } = useApiList<Senior>("seniors", "/seniors");
   const { data: visits = [], isLoading: lv } = useApiList<CareVisit>("care-visits", "/care-visits");
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
   const { data: vitals = [], isLoading: lvt } = useApiList<VitalRecord>("vitals", "/vitals");
 
   const isLoading = ld || lp || lv || lt || lvt;
 
-  const patient = dashboard?.patient || patients.find(p => p.user_id === String(user?.id)) || patients[0];
+  const senior = dashboard?.senior || seniors.find(p => p.user_id === String(user?.id)) || seniors[0];
   const latestVital = vitals[0];
 
   if (isLoading) {
@@ -40,10 +40,10 @@ export default function PatientDashboard() {
     );
   }
 
-  if (!patient) {
+  if (!senior) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">No patient profile found</p>
+        <p className="text-muted-foreground">No senior profile found</p>
       </div>
     );
   }
@@ -53,13 +53,13 @@ export default function PatientDashboard() {
       <div className="bg-card rounded-xl p-6 card-shadow border border-border/50">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold">
-            {patient.full_name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+            {senior.full_name?.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">{patient.full_name}</h1>
-            <p className="text-sm text-muted-foreground">{patient.age} years · {patient.gender} · {patient.blood_group}</p>
+            <h1 className="text-xl font-bold text-foreground">{senior.full_name}</h1>
+            <p className="text-sm text-muted-foreground">{senior.age} years · {senior.gender} · {senior.blood_group}</p>
             <div className="flex items-center gap-3 mt-2">
-              <StatusBadge status={patient.risk_category || "Low"} />
+              <StatusBadge status={senior.risk_category || "Low"} />
             </div>
           </div>
           <button className="flex items-center gap-2 bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-semibold text-sm hover:bg-destructive/90 transition-colors">
@@ -70,7 +70,7 @@ export default function PatientDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Health Status" value={patient.risk_category || "N/A"} icon={Heart} variant={patient.risk_category === "High" ? "warning" : "success"} />
+        <StatCard title="Health Status" value={senior.risk_category || "N/A"} icon={Heart} variant={senior.risk_category === "High" ? "warning" : "success"} />
         <StatCard title="Total Visits" value={dashboard?.visits_count ?? visits.length} icon={Calendar} variant="accent" />
         <StatCard title="Pending Tasks" value={tasks.filter(t => t.status === "pending").length} icon={ClipboardList} variant="primary" />
         <StatCard title="Latest Heart Rate" value={latestVital ? `${latestVital.heart_rate} bpm` : "N/A"} icon={Activity} variant="success" />

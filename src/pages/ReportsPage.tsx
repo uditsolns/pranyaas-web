@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApiList } from "@/hooks/useApi";
-import { Patient, CareVisit, Task, EmergencyAlert } from "@/types";
+import { Senior, CareVisit, Task, EmergencyAlert } from "@/types";
 import { taskCompletionData, visitActivityData, emergencyTrendsData } from "@/data/mock";
 import { PageHeader } from "@/components/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +14,7 @@ const COLORS = ["hsl(160, 60%, 45%)", "hsl(40, 90%, 54%)", "hsl(24, 90%, 54%)", 
 export default function ReportsPage() {
   const [reportType, setReportType] = useState("overview");
 
-  const { data: patients = [], isLoading: lp } = useApiList<Patient>("patients", "/patients");
+  const { data: seniors = [], isLoading: lp } = useApiList<Senior>("seniors", "/seniors");
   const { data: visits = [], isLoading: lv } = useApiList<CareVisit>("visits", "/care-visits");
   const { data: tasks = [], isLoading: lt } = useApiList<Task>("tasks", "/tasks");
   const { data: emergencies = [], isLoading: le } = useApiList<EmergencyAlert>("emergencies", "/emergency-alerts");
@@ -22,10 +22,10 @@ export default function ReportsPage() {
   const isLoading = lp || lv || lt || le;
 
   const riskDistribution = [
-    { name: "Low", value: patients.filter(p => p.risk_category === "Low").length },
-    { name: "Medium", value: patients.filter(p => p.risk_category === "Medium").length },
-    { name: "High", value: patients.filter(p => p.risk_category === "High").length },
-    { name: "Critical", value: patients.filter(p => p.risk_category === "Critical").length },
+    { name: "Low", value: seniors.filter(p => p.risk_category === "Low").length },
+    { name: "Medium", value: seniors.filter(p => p.risk_category === "Medium").length },
+    { name: "High", value: seniors.filter(p => p.risk_category === "High").length },
+    { name: "Critical", value: seniors.filter(p => p.risk_category === "Critical").length },
   ];
 
   return (
@@ -50,8 +50,8 @@ export default function ReportsPage() {
         ) : (
           <>
             <div className="bg-card rounded-xl p-4 card-shadow border border-border/50">
-              <p className="text-xs text-muted-foreground uppercase">Total Patients</p>
-              <p className="text-2xl font-bold text-foreground mt-1">{patients.length}</p>
+              <p className="text-xs text-muted-foreground uppercase">Total Seniors</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{seniors.length}</p>
             </div>
             <div className="bg-card rounded-xl p-4 card-shadow border border-border/50">
               <p className="text-xs text-muted-foreground uppercase">Total Visits</p>
@@ -71,7 +71,7 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-card rounded-xl p-5 card-shadow border border-border/50">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Patient Risk Distribution</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Senior Risk Distribution</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie data={riskDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value">

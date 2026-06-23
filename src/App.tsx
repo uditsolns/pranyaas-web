@@ -8,9 +8,9 @@ import { AppLayout } from "@/components/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import CareManagerDashboard from "./pages/CareManagerDashboard";
-import PatientDashboard from "./pages/PatientDashboard";
-import PatientsPage from "./pages/PatientsPage";
-import PatientDetailPage from "./pages/PatientDetailPage";
+import SeniorDashboard from "./pages/SeniorDashboard";
+import SeniorsPage from "./pages/SeniorsPage";
+import SeniorDetailPage from "./pages/SeniorDetailPage";
 import TasksPage from "./pages/TasksPage";
 import VisitsPage from "./pages/VisitsPage";
 import VitalsPage from "./pages/VitalsPage";
@@ -54,7 +54,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function RoleDashboard() {
   const { role } = useAuth();
   if (role === "CARE_MANAGER") return <CareManagerDashboard />;
-  if (role === "PATIENT" || role === "PATIENT_RELATIVE") return <PatientDashboard />;
+  if (role === "PATIENT" || role === "PATIENT_RELATIVE") return <SeniorDashboard />;
   return <AdminDashboard />;
 }
 
@@ -70,8 +70,8 @@ const App = () => (
             <AppLayout>
               <Routes>
                 <Route path="/" element={<RoleDashboard />} />
-                <Route path="/patients" element={<PatientsPage />} />
-                <Route path="/patients/:id" element={<PatientDetailPage />} />
+                <Route path="/seniors" element={<SeniorsPage />} />
+                <Route path="/seniors/:id" element={<SeniorDetailPage />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/visits" element={<VisitsPage />} />
                 <Route path="/vitals" element={<VitalsPage />} />

@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CMDashboardData {
-  patients_count?: number;
+  seniors_count?: number;
   visits_count?: number;
   tasks_count?: number;
   emergencies_count?: number;
@@ -38,7 +38,7 @@ export default function CareManagerDashboard() {
     );
   }
 
-  const patientsCount = dashboard?.patients_count ?? 0;
+  const seniorsCount = dashboard?.seniors_count ?? 0;
   const pendingTasks = tasks.filter(t => t.status !== "completed");
   const activeEmergencies = emergencies.filter(e => e.status !== "resolved");
 
@@ -50,7 +50,7 @@ export default function CareManagerDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Assigned Patients" value={patientsCount} icon={Users} variant="primary" />
+        <StatCard title="Assigned Seniors" value={seniorsCount} icon={Users} variant="primary" />
         <StatCard title="Total Visits" value={dashboard?.visits_count ?? visits.length} icon={Calendar} variant="accent" />
         <StatCard title="Pending Tasks" value={pendingTasks.length} icon={ClipboardList} variant="warning" />
         <StatCard title="Emergency Alerts" value={activeEmergencies.length} icon={AlertTriangle} variant="destructive" />
