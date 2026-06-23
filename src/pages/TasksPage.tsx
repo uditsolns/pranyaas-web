@@ -194,7 +194,7 @@ export default function TasksPage() {
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Task</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Senior</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">{activeTab === "Care Manager" ? "Care Manager" : "Family"}</th>
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">Due Date</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Due Date & Time</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Priority</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Status</th>
                 <th className="text-right text-xs font-medium text-muted-foreground p-4">Actions</th>
@@ -213,7 +213,10 @@ export default function TasksPage() {
                       : (t.care_manager_id ? getCMName(t.care_manager_id) : "—")
                     }
                   </td>
-                  <td className="p-4 text-sm text-foreground">{formatDate(t.due_date)}</td>
+                  <td className="p-4 text-sm text-foreground">
+                    {formatDate(t.due_date)} 
+                    {t.task_time && <span className="text-muted-foreground ml-2 text-xs">{t.task_time}</span>}
+                  </td>
                   <td className="p-4"><StatusBadge status={t.priority || "1"} /></td>
                   <td className="p-4"><StatusBadge status={t.status || "pending"} /></td>
                   <td className="p-4">

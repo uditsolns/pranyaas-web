@@ -12,6 +12,7 @@ import {
   Loader2,
   ShieldCheck,
   ExternalLink,
+  Heart,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -461,6 +462,19 @@ export default function SeniorsPage() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>View</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+                              onClick={() => navigate(`/seniors/${p.id}?tab=family`)}
+                            >
+                              <Heart className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Family</TooltipContent>
                         </Tooltip>
                         {hasEdit && (
                           <Tooltip>

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useApiGet, useApiList, useApiCreate, useApiUpdate, useApiDelete } from "@/hooks/useApi";
 import { Senior, VitalRecord, CareVisit, Task, EmergencyAlert, Family, EmergencyContact } from "@/types";
@@ -16,6 +16,9 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 export default function SeniorDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const defaultTab = queryParams.get("tab") || "profile";
 
   const { data: senior, isLoading: lp } = useApiGet<Senior>(`patient-${id}`, `/patients/${id}`, !!id);
   const { data: vitals = [], isLoading: lv } = useApiList<VitalRecord>("vitals", "/vitals");
@@ -94,7 +97,7 @@ export default function SeniorDetailPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <div className="overflow-x-auto pb-2 -mb-2">
           <TabsList className="w-max flex-shrink-0">
             <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -442,7 +445,7 @@ export default function SeniorDetailPage() {
                 <div key={t.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-foreground">{t.title}</p>
-                    <p className="text-xs text-muted-foreground">Due: {t.due_date}</p>
+                    <p className="text-xs text-muted-foreground">Due: {t.due_date}{t.task_time ? ` at ${t.task_time}` : ""}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={t.priority} />

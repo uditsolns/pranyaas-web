@@ -82,7 +82,7 @@ export default function CareManagerDashboard() {
               <div key={t.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                 <div>
                   <p className="text-sm font-medium text-foreground">{t.title}</p>
-                  <p className="text-xs text-muted-foreground">Due: {t.due_date}</p>
+                  <p className="text-xs text-muted-foreground">Due: {t.due_date}{t.task_time ? ` at ${t.task_time}` : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={t.priority} />

@@ -25,7 +25,7 @@ export default function SeniorDashboard() {
 
   const isLoading = ld || lp || lv || lt || lvt;
 
-  const senior = dashboard?.senior || seniors.find(p => p.user_id === String(user?.id)) || seniors[0];
+  const senior = dashboard?.patient || seniors.find(p => p.user_id === String(user?.id)) || seniors[0];
   const latestVital = vitals[0];
 
   if (isLoading) {
@@ -121,7 +121,7 @@ export default function SeniorDashboard() {
               <div key={t.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
                 <div>
                   <p className="text-sm font-medium text-foreground">{t.title}</p>
-                  <p className="text-xs text-muted-foreground">Due: {t.due_date}</p>
+                  <p className="text-xs text-muted-foreground">Due: {t.due_date}{t.task_time ? ` at ${t.task_time}` : ""}</p>
                 </div>
                 <StatusBadge status={t.status} />
               </div>
