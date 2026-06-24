@@ -196,7 +196,8 @@ export interface Family {
     relative_id?: string;
     user_id: string;
     patient_id: string;
-    senior_name: string;
+    senior_name?: string;
+    patient_name?: string;
     patient?: Senior;
   }[];
 }
@@ -385,16 +386,26 @@ export interface MedicalRecord {
   updated_at: string;
 }
 
+export interface MedicineItem {
+  id?: number;
+  medicine_name: string;
+  dosage: string;
+  quantity?: string;
+  frequency?: string;
+}
+
 export interface MedicationReminder {
   id: number;
   patient_id: string;
-  medicine_name: string;
-  dosage: string;
+  medicine_name?: string;
+  dosage?: string;
   frequency: string;
   medicine_type: string;
+  medicine_time?: string;
   start_date: string;
   end_date: string;
   status: string;
+  medicines?: MedicineItem[];
   created_at: string;
   updated_at: string;
 }

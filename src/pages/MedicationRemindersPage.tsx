@@ -3,7 +3,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { MedicationReminder, Senior } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, Pencil, Trash2, Loader2, Pill } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, Loader2, Pill, Plus } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
@@ -21,13 +21,13 @@ import { canEdit } from "@/lib/permissions";
 
 const emptyMedication: Partial<MedicationReminder> = {
   patient_id: "",
-  medicine_name: "",
-  dosage: "",
   frequency: "",
+  medicine_time: "",
   medicine_type: "morning",
   start_date: "",
   end_date: "",
   status: "pending",
+  medicines: [{ medicine_name: "", dosage: "", quantity: "" }],
 };
 
 export default function MedicationRemindersPage() {
@@ -57,6 +57,7 @@ export default function MedicationRemindersPage() {
     const pName = getSeniorName(m.patient_id);
     return (
       (m.medicine_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (m.medicines && m.medicines.some(med => med.medicine_name.toLowerCase().includes(search.toLowerCase()))) ||
       pName.toLowerCase().includes(search.toLowerCase())
     );
   });
@@ -67,7 +68,7 @@ export default function MedicationRemindersPage() {
   const openEdit = (m: MedicationReminder) => { setEditingItem({ ...m }); setDialogOpen(true); };
 
   const handleSave = () => {
-    if (!editingItem?.medicine_name?.trim() || !editingItem?.patient_id) return;
+    if (!editingItem?.patient_id || !(editingItem.medicines?.length || editingItem.medicine_name?.trim())) return;
     
     if (editingItem.id) {
       updateMutation.mutate({ id: editingItem.id, data: editingItem }, { onSuccess: () => setDialogOpen(false) });
@@ -132,9 +133,16 @@ export default function MedicationRemindersPage() {
               ) : paged.map(m => (
                 <tr key={m.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{getSeniorName(m.patient_id)}</td>
-                  <td className="p-4 text-sm text-foreground">{m.medicine_name}</td>
-                  <td className="p-4 text-sm text-foreground capitalize">{m.medicine_type}</td>
-                  <td className="p-4 text-sm text-foreground">{m.dosage} <span className="text-muted-foreground text-xs ml-1">({m.frequency})</span></td>
+                  <td className="p-4 text-sm text-foreground">
+                    {m.medicines?.length ? m.medicines.map(med => med.medicine_name).join(', ') : m.medicine_name}
+                  </td>
+                  <td className="p-4 text-sm text-foreground capitalize">
+                    {m.medicine_type} {m.medicine_time}
+                  </td>
+                  <td className="p-4 text-sm text-foreground">
+                    {m.medicines?.length ? <span className="text-xs text-muted-foreground">Multiple ({m.medicines.length})</span> : <>{m.dosage}</>}
+                    <span className="text-muted-foreground text-xs ml-1">({m.frequency})</span>
+                  </td>
                   <td className="p-4 text-sm text-foreground">
                     <div className="text-xs">{formatDate(m.start_date)} to</div>
                     <div className="text-xs font-medium">{formatDate(m.end_date)}</div>
@@ -164,12 +172,29 @@ export default function MedicationRemindersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{getSeniorName(viewingItem.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingItem.status || "pending"} /></div>
-                <div><p className="text-xs text-muted-foreground">Medicine</p><p className="text-sm font-medium">{viewingItem.medicine_name}</p></div>
-                <div><p className="text-xs text-muted-foreground">Type</p><p className="text-sm font-medium capitalize">{viewingItem.medicine_type}</p></div>
-                <div><p className="text-xs text-muted-foreground">Dosage</p><p className="text-sm font-medium">{viewingItem.dosage}</p></div>
+                <div><p className="text-xs text-muted-foreground">Type/Time</p><p className="text-sm font-medium capitalize">{viewingItem.medicine_type} {viewingItem.medicine_time}</p></div>
                 <div><p className="text-xs text-muted-foreground">Frequency</p><p className="text-sm font-medium">{viewingItem.frequency}</p></div>
                 <div><p className="text-xs text-muted-foreground">Period</p><p className="text-sm font-medium">{formatDate(viewingItem.start_date)} to {formatDate(viewingItem.end_date)}</p></div>
               </div>
+              
+              <div className="mt-4 border-t pt-4">
+                <p className="text-sm font-medium mb-2">Medicines</p>
+                {viewingItem.medicines?.length ? (
+                  <div className="space-y-2">
+                    {viewingItem.medicines.map((med, i) => (
+                      <div key={i} className="flex justify-between items-center bg-secondary/20 p-2 rounded text-sm">
+                        <span>{med.medicine_name}</span>
+                        <span className="text-muted-foreground text-xs">Dosage: {med.dosage} | Qty: {med.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-secondary/20 p-2 rounded text-sm">
+                    <p>{viewingItem.medicine_name} - {viewingItem.dosage}</p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2 mt-4">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>Close</Button>
                 {hasEdit && <Button onClick={() => { setDetailOpen(false); openEdit(viewingItem); }}>Edit</Button>}
@@ -199,18 +224,54 @@ export default function MedicationRemindersPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Medicine Name <span className="text-destructive">*</span></Label>
-              <Input value={editingItem?.medicine_name || ""} onChange={e => updateField("medicine_name", e.target.value)} placeholder="e.g. Metformin" />
+            <div className="space-y-4 border rounded-md p-4 bg-secondary/10">
+              <div className="flex justify-between items-center">
+                <Label>Medicines <span className="text-destructive">*</span></Label>
+                <Button type="button" variant="outline" size="sm" onClick={() => {
+                  const meds = editingItem?.medicines || [];
+                  updateField("medicines", [...meds as any, { medicine_name: "", dosage: "", quantity: "" }] as any);
+                }}>
+                  <Plus className="h-4 w-4 mr-1" /> Add
+                </Button>
+              </div>
+              {(editingItem?.medicines || []).map((med, i) => (
+                <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                  <Input placeholder="Medicine" value={med.medicine_name} onChange={e => {
+                    const meds = [...(editingItem?.medicines || [])];
+                    meds[i].medicine_name = e.target.value;
+                    updateField("medicines", meds as any);
+                  }} />
+                  <Input placeholder="Dosage" value={med.dosage} onChange={e => {
+                    const meds = [...(editingItem?.medicines || [])];
+                    meds[i].dosage = e.target.value;
+                    updateField("medicines", meds as any);
+                  }} />
+                  <Input placeholder="Quantity" value={med.quantity || ""} onChange={e => {
+                    const meds = [...(editingItem?.medicines || [])];
+                    meds[i].quantity = e.target.value;
+                    updateField("medicines", meds as any);
+                  }} />
+                  <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => {
+                    const meds = [...(editingItem?.medicines || [])];
+                    meds.splice(i, 1);
+                    updateField("medicines", meds as any);
+                  }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {(!editingItem?.medicines || editingItem.medicines.length === 0) && (
+                 <p className="text-xs text-muted-foreground text-center">Add at least one medicine.</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Dosage</Label>
-                <Input value={editingItem?.dosage || ""} onChange={e => updateField("dosage", e.target.value)} placeholder="e.g. 500mg" />
+                <Label>Frequency</Label>
+                <Input value={editingItem?.frequency || ""} onChange={e => updateField("frequency", e.target.value)} placeholder="e.g. Morning" />
               </div>
               <div className="space-y-2">
-                <Label>Frequency</Label>
-                <Input value={editingItem?.frequency || ""} onChange={e => updateField("frequency", e.target.value)} placeholder="e.g. Twice a day" />
+                <Label>Medicine Time</Label>
+                <Input type="time" value={editingItem?.medicine_time || ""} onChange={e => updateField("medicine_time", e.target.value as any)} />
               </div>
             </div>
             <div className="space-y-2">
@@ -249,7 +310,7 @@ export default function MedicationRemindersPage() {
           </div>
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending || !editingItem?.patient_id || !editingItem?.medicine_name}>
+            <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending || !editingItem?.patient_id || !(editingItem?.medicines?.length || editingItem?.medicine_name)}>
               {editingItem?.id ? "Update" : "Save"} Medication
             </Button>
           </div>
