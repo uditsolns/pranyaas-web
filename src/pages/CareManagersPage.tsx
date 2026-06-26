@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { useApiList, useApiCreate, useApiUpdate, useApiDelete } from "@/hooks/useApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -31,6 +32,7 @@ const emptyCM: CMFormState = {
 };
 
 export default function CareManagersPage() {
+  const navigate = useNavigate();
   const { role } = useAuth();
   const hasEdit = canEdit(role, "care-managers");
   const { data: cms = [], isLoading } = useApiList<CareManager>("care-managers", "/care-managers");
@@ -48,6 +50,8 @@ export default function CareManagersPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [viewingCM, setViewingCM] = useState<CareManager | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [patientsModalOpen, setPatientsModalOpen] = useState(false);
+  const [viewingPatientsCM, setViewingPatientsCM] = useState<CareManager | null>(null);
 
   const filtered = cms.filter(cm => {
     const matchesSearch = (cm.name || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -200,6 +204,15 @@ export default function CareManagersPage() {
                 <div><p className="text-xs text-muted-foreground">Experience</p><p className="text-sm font-medium text-foreground">{cm.years_of_experience} yrs</p></div>
                 <div><p className="text-xs text-muted-foreground">Availability</p><StatusBadge status={cm.availability_type || "Full Time"} /></div>
                 <div><p className="text-xs text-muted-foreground">Region</p><p className="text-sm font-medium text-foreground">{cm.region}</p></div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Patients</p>
+                  <p 
+                    className="text-sm font-medium text-primary cursor-pointer hover:underline" 
+                    onClick={() => { setViewingPatientsCM(cm); setPatientsModalOpen(true); }}
+                  >
+                    {Array.isArray(cm.patient_id) ? cm.patient_id.length : (cm.patient_id ? 1 : 0)}
+                  </p>
+                </div>
               </div>
               {cm.cpr_certified === "Yes" && (
                 <div className="mt-3 flex items-center gap-1.5 text-xs text-success">
@@ -406,6 +419,66 @@ export default function CareManagersPage() {
       </Dialog>
 
       <DeleteConfirmDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)} onConfirm={handleDelete} title="Delete Care Manager?" />
+
+      {/* Patients Dialog */}
+      <Dialog open={patientsModalOpen} onOpenChange={setPatientsModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle>Patients Assigned to {viewingPatientsCM?.name}</DialogTitle></DialogHeader>
+          <div className="mt-4">
+            {viewingPatientsCM && Array.isArray(viewingPatientsCM.patient_id) && viewingPatientsCM.patient_id.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Patient ID</th>
+                      <th className="px-4 py-3 font-medium">Patient Name</th>
+                      <th className="px-4 py-3 font-medium text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {viewingPatientsCM.patient_id.map((p: any) => (
+                      <tr key={p.id || p.patient_id} className="hover:bg-muted/50">
+                        <td className="px-4 py-3">{p.patient_id}</td>
+                        <td className="px-4 py-3 font-medium">{p.patient_name}</td>
+                        <td className="px-4 py-3 text-right">
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/seniors/${p.patient_id}`)}>
+                            View Profile
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : viewingPatientsCM && viewingPatientsCM.patient_id ? (
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Patient ID</th>
+                      <th className="px-4 py-3 font-medium text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    <tr className="hover:bg-muted/50">
+                      <td className="px-4 py-3">{viewingPatientsCM.patient_id}</td>
+                      <td className="px-4 py-3 text-right">
+                        <Button size="sm" variant="outline" onClick={() => navigate(`/seniors/${viewingPatientsCM.patient_id}`)}>
+                          View Profile
+                        </Button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No patients assigned.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
