@@ -347,6 +347,7 @@ export interface PlanServiceRequest {
   subject: string;
   description: string;
   priority: string;
+  status?: string;
   created_at?: string;
   updated_at?: string;
 }

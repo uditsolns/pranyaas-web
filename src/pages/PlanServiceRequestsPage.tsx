@@ -19,7 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 
 const emptyRequest: Partial<PlanServiceRequest> = {
-  plan_id: "", user_id: "", subject: "", description: "", priority: "medium"
+  plan_id: "", user_id: "", subject: "", description: "", priority: "medium", status: "pending"
 };
 
 export default function PlanServiceRequestsPage() {
@@ -27,6 +27,7 @@ export default function PlanServiceRequestsPage() {
   const hasEdit = canEdit(role, "plan-service-requests");
   const { data: requests = [], isLoading, isError, error } = useApiList<PlanServiceRequest>("plan-service-requests", "/plan-service-requests");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
+  const { data: plans = [] } = useApiList<any>("plans", "/plans-with-features");
 
   const createMutation = useApiCreate<PlanServiceRequest>("plan-service-requests", "/plan-service-requests", "Plan Service Request");
   const updateMutation = useApiUpdate<PlanServiceRequest>("plan-service-requests", "/plan-service-requests", "Plan Service Request");
@@ -43,6 +44,12 @@ export default function PlanServiceRequestsPage() {
     if (!id) return "N/A";
     const u = users.find(u => String(u.id) === String(id));
     return u?.name || `User #${id}`;
+  };
+
+  const getPlanName = (id: string | number) => {
+    if (!id) return "—";
+    const p = plans.find((p: any) => String(p.id) === String(id));
+    return p?.plan_name || String(id);
   };
 
   const filtered = useMemo(() => {
@@ -111,20 +118,22 @@ export default function PlanServiceRequestsPage() {
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Subject</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">User</th>
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">Plan ID</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Plan</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Priority</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Status</th>
                 <th className="text-right text-xs font-medium text-muted-foreground p-4">Actions</th>
               </tr>
             </thead>
             <tbody>
               {paged.length === 0 ? (
-                <tr><td colSpan={5}><EmptyState title="No requests found" /></td></tr>
+                <tr><td colSpan={6}><EmptyState title="No requests found" /></td></tr>
               ) : paged.map(r => (
                 <tr key={r.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{r.subject}</td>
                   <td className="p-4 text-sm text-foreground">{r.user_id ? getUserName(r.user_id) : "—"}</td>
-                  <td className="p-4 text-sm text-foreground">{r.plan_id || "—"}</td>
+                  <td className="p-4 text-sm text-foreground">{r.plan_id ? getPlanName(r.plan_id) : "—"}</td>
                   <td className="p-4"><StatusBadge status={r.priority || "medium"} /></td>
+                  <td className="p-4"><StatusBadge status={r.status || "pending"} /></td>
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-1">
                       <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setViewingRequest(r); setDetailOpen(true); }}><Eye className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>View</TooltipContent></Tooltip>
@@ -148,8 +157,9 @@ export default function PlanServiceRequestsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Subject</p><p className="text-sm font-medium">{viewingRequest.subject}</p></div>
                 <div><p className="text-xs text-muted-foreground">User</p><p className="text-sm font-medium">{viewingRequest.user_id ? getUserName(viewingRequest.user_id) : "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Plan ID</p><p className="text-sm font-medium">{viewingRequest.plan_id || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Plan</p><p className="text-sm font-medium">{viewingRequest.plan_id ? getPlanName(viewingRequest.plan_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Priority</p><StatusBadge status={viewingRequest.priority} /></div>
+                <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingRequest.status || "pending"} /></div>
               </div>
               {viewingRequest.description && <div><p className="text-xs text-muted-foreground">Description</p><p className="text-sm mt-1">{viewingRequest.description}</p></div>}
               <div className="flex justify-end gap-2 mt-4">
@@ -183,8 +193,13 @@ export default function PlanServiceRequestsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Plan ID</Label>
-              <Input value={editingRequest?.plan_id || ""} onChange={e => updateField("plan_id", e.target.value)} placeholder="e.g. 1" />
+              <Label>Plan</Label>
+              <Select value={String(editingRequest?.plan_id || "")} onValueChange={v => updateField("plan_id", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Plan..." /></SelectTrigger>
+                <SelectContent>
+                  {plans.map((p: any) => <SelectItem key={p.id} value={String(p.id)}>{p.plan_name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Priority</Label>
@@ -194,6 +209,18 @@ export default function PlanServiceRequestsPage() {
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={editingRequest?.status || "pending"} onValueChange={v => updateField("status", v)}>
+                <SelectTrigger><SelectValue placeholder="Select Status..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
