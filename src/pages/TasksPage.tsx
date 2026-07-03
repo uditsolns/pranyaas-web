@@ -23,7 +23,7 @@ import { canEdit } from "@/lib/permissions";
 
 const emptyTask: Partial<Task> = {
   title: "", description: "", patient_id: "", care_manager_id: "",
-  due_date: "", priority: "", status: "", remark: "",
+  due_date: "", priority: "3", status: "pending", remark: "",
   created_by: "", category: "Care Manager", relative_id: "",
   task_time: "",
 };
@@ -80,7 +80,8 @@ export default function TasksPage() {
         relName.toLowerCase().includes(search.toLowerCase());
         
       const matchesStatus = filterStatus === "all" || t.status === filterStatus;
-      const matchesTab = t.category === activeTab || (!t.category && activeTab === "Care Manager");
+      const matchesTab = (activeTab === "Care Manager" && (t.category === "Care Manager" || !t.category)) || 
+                         (activeTab === "Family" && (t.category === "Family" || t.category === "Relative"));
       return matchesSearch && matchesStatus && matchesTab;
     });
   }, [tasks, search, filterStatus, activeTab, seniors, cms, relatives]);
@@ -95,12 +96,14 @@ export default function TasksPage() {
 
     // Set created_by based on category as per requirements
     let created_by = "";
-    if (editingTask.category === "Family" && editingTask.relative_id) {
+    if ((editingTask.category === "Family" || editingTask.category === "Relative") && editingTask.relative_id) {
       const relative = relatives.find(r => String(r.id) === String(editingTask.relative_id));
       created_by = relative ? String(relative.user_id) : "";
     }
 
-    const payload = { ...editingTask, created_by };
+    const payloadCategory = editingTask.category === "Family" ? "Relative" : editingTask.category;
+
+    const payload = { ...editingTask, category: payloadCategory, created_by };
 
     if (editingTask.id) {
       updateMutation.mutate({ id: editingTask.id, data: payload }, { onSuccess: () => setDialogOpen(false) });
@@ -208,7 +211,7 @@ export default function TasksPage() {
                   <td className="p-4 text-sm font-medium text-foreground">{t.title}</td>
                   <td className="p-4 text-sm text-foreground">{t.patient_id ? getSeniorName(t.patient_id) : "—"}</td>
                   <td className="p-4 text-sm text-foreground">
-                    {t.category === "Family" 
+                    {(t.category === "Family" || t.category === "Relative") 
                       ? (t.relative_id ? getFamilyName(t.relative_id) : "—")
                       : (t.care_manager_id ? getCMName(t.care_manager_id) : "—")
                     }
@@ -286,7 +289,7 @@ export default function TasksPage() {
             </div>
             <div className="space-y-2">
               <Label>Task Category <span className="text-destructive">*</span></Label>
-              <Select value={editingTask?.category || "Care Manager"} onValueChange={v => updateField("category", v)}>
+              <Select value={editingTask?.category === "Relative" ? "Family" : (editingTask?.category || "Care Manager")} onValueChange={v => updateField("category", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Care Manager">Care Manager</SelectItem>
@@ -294,7 +297,7 @@ export default function TasksPage() {
                 </SelectContent>
               </Select>
             </div>
-            {editingTask?.category === "Family" ? (
+            {editingTask?.category === "Family" || editingTask?.category === "Relative" ? (
               <div className="space-y-2">
                 <Label>Family <span className="text-destructive">*</span></Label>
                 <Select value={editingTask?.relative_id || ""} onValueChange={v => updateField("relative_id", v)}>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { EmergencyAlert, Senior } from "@/types";
+import { EmergencyAlert, Senior, EmergencyContact } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AlertTriangle, CheckCircle, Clock, Eye, Loader2, Search, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
+import { formatDateTime } from "@/lib/utils";
 
 export default function EmergenciesPage() {
   const { data: emergencies = [], isLoading } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
@@ -33,7 +34,7 @@ export default function EmergenciesPage() {
   const [viewing, setViewing] = useState<EmergencyAlert | null>(null);
   const [editingItem, setEditingItem] = useState<Partial<EmergencyAlert> | null>(null);
   const [relativesOpen, setFamiliesOpen] = useState(false);
-  const [viewingContacts, setViewingContacts] = useState<any[]>([]);
+  const [viewingContacts, setViewingContacts] = useState<EmergencyContact[]>([]);
 
   const handleStatusUpdate = (id: number, status: string) => {
     updateMutation.mutate({ id, data: { status } });
@@ -158,23 +159,23 @@ export default function EmergenciesPage() {
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-border/50">
                 <div>
                   <p className="text-xs text-muted-foreground">Care Manager</p>
-                  <p className="text-sm font-semibold text-foreground">{e.senior?.care_manager?.name || "—"}</p>
-                  <p className="text-xs text-muted-foreground">{e.senior?.care_manager?.phone || "—"}</p>
+                  <p className="text-sm font-semibold text-foreground">{e.patient?.care_manager?.name || "NA"}</p>
+                  <p className="text-xs text-muted-foreground">{e.patient?.care_manager?.phone || "NA"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Family</p>
-                  <p className="text-sm font-semibold text-foreground">{e.senior?.emergency_contacts?.[0]?.name || "—"}</p>
+                  <p className="text-sm font-semibold text-foreground">{e.patient?.emergency_contacts?.[0]?.name || "NA"}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className="text-xs text-muted-foreground">{e.senior?.emergency_contacts?.[0]?.phone || "—"}</p>
-                    {(e.senior?.emergency_contacts?.length ?? 0) > 0 && (
+                    <p className="text-xs text-muted-foreground">{e.patient?.emergency_contacts?.[0]?.phone || "NA"}</p>
+                    {(e.patient?.emergency_contacts?.length ?? 0) > 0 && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="h-5 px-1.5 text-primary bg-primary/5 hover:bg-black hover:text-white gap-1 rounded-md transition-all" 
-                        onClick={() => { setViewingContacts(e.senior?.emergency_contacts || []); setFamiliesOpen(true); }}
+                        onClick={() => { setViewingContacts(e.patient?.emergency_contacts || []); setFamiliesOpen(true); }}
                       >
-                        {(e.senior?.emergency_contacts?.length ?? 0) > 1 && (
-                          <span className="text-[10px] font-bold">+{e.senior!.emergency_contacts!.length - 1} more</span>
+                        {(e.patient?.emergency_contacts?.length ?? 0) > 1 && (
+                          <span className="text-[10px] font-bold">+{e.patient!.emergency_contacts!.length - 1} more</span>
                         )}
                         <Eye className="h-3 w-3" />
                       </Button>
@@ -183,7 +184,7 @@ export default function EmergenciesPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Created</p>
-                  <p className="text-sm font-medium text-foreground">{new Date(e.created_at).toLocaleString('en-GB')}</p>
+                  <p className="text-sm font-medium text-foreground">{formatDateTime(e.created_at)}</p>
                 </div>
                 {e.latitude && (
                   <div>
@@ -216,22 +217,22 @@ export default function EmergenciesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Triggered By</p><p className="text-sm font-medium">{viewing.triggered_by}</p></div>
                 <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{getSeniorName(viewing.patient_id)}</p></div>
-                <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewing.senior?.care_manager?.name || "—"} ({viewing.senior?.care_manager?.phone || "—"})</p></div>
+                <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewing.patient?.care_manager?.name || "NA"} ({viewing.patient?.care_manager?.phone || "NA"})</p></div>
                 <div>
                   <p className="text-xs text-muted-foreground">Family</p>
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">
-                      {viewing.senior?.emergency_contacts?.[0]?.name || "—"} 
-                      {viewing.senior?.emergency_contacts?.[0]?.phone ? ` (${viewing.senior.emergency_contacts[0].phone})` : ""}
+                      {viewing.patient?.emergency_contacts?.[0]?.name || "NA"} 
+                      {viewing.patient?.emergency_contacts?.[0]?.phone ? ` (${viewing.patient.emergency_contacts[0].phone})` : ""}
                     </p>
-                    {(viewing.senior?.emergency_contacts?.length ?? 0) > 1 && (
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => { setViewingContacts(viewing.senior?.emergency_contacts || []); setFamiliesOpen(true); }}>
-                        View All ({viewing.senior?.emergency_contacts?.length})
+                    {(viewing.patient?.emergency_contacts?.length ?? 0) > 1 && (
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => { setViewingContacts(viewing.patient?.emergency_contacts || []); setFamiliesOpen(true); }}>
+                        View All ({viewing.patient?.emergency_contacts?.length})
                       </Button>
                     )}
                   </div>
                 </div>
-                <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{new Date(viewing.created_at).toLocaleString('en-GB')}</p></div>
+                <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{formatDateTime(viewing.created_at)}</p></div>
                 {viewing.latitude && <div><p className="text-xs text-muted-foreground">Location</p><AddressDisplay lat={viewing.latitude} lon={viewing.longitude} /></div>}
               </div>
               <div className="flex justify-end">

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { ExportButton } from "@/components/ExportButton";
 import { Family, Senior } from "@/types";
 import { Input } from "@/components/ui/input";
-import { Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, Pencil, Trash2, Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -41,6 +41,7 @@ export default function FamiliesPage() {
   const [editingItem, setEditingItem] = useState<FamilyForm | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const filtered = relatives.filter(r =>
     (r.relative_name || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -48,7 +49,7 @@ export default function FamiliesPage() {
   );
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
-  const openCreate = () => { setEditingItem({ ...emptyFamily }); setErrors({}); setDialogOpen(true); };
+  const openCreate = () => { setEditingItem({ ...emptyFamily }); setErrors({}); setShowPassword(false); setDialogOpen(true); };
   const openEdit = (r: Family) => { 
     const sourcePatients = r.patients || (r as any).seniors || [];
     const mappedSeniors = sourcePatients.map((p: any) => ({
@@ -167,6 +168,7 @@ export default function FamiliesPage() {
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Relationship</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Location</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Phone</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Email</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Update Mode</th>
                 <th className="text-right text-xs font-medium text-muted-foreground p-4">Actions</th>
               </tr>
@@ -186,6 +188,7 @@ export default function FamiliesPage() {
                   <td className="p-4 text-sm text-foreground">{r.relationship}</td>
                   <td className="p-4 text-sm text-foreground">{r.location_type} {r.country ? `(${r.country})` : ""}</td>
                   <td className="p-4 text-sm text-foreground">{r.phone_number}</td>
+                  <td className="p-4 text-sm text-foreground">{r.email || "—"}</td>
                   <td className="p-4 text-sm text-foreground">{r.preferred_update_mode}</td>
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-1">
@@ -265,12 +268,24 @@ export default function FamiliesPage() {
             {!editingItem?.id && (
               <div className="space-y-2">
                 <Label className={errors.password ? "text-destructive" : ""}>Password <span className="text-destructive">*</span></Label>
-                <Input 
-                  type="password" 
-                  value={editingItem?.password || ""} 
-                  onChange={e => updateField("password", e.target.value)} 
-                  className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
-                />
+                <div className="relative">
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    autoComplete="new-password"
+                    value={editingItem?.password || ""} 
+                    onChange={e => updateField("password", e.target.value)} 
+                    className={errors.password ? "border-destructive focus-visible:ring-destructive pr-10" : "pr-10"}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
                 {errors.password && <p className="text-[10px] text-destructive font-medium">{errors.password}</p>}
               </div>
             )}
@@ -281,6 +296,7 @@ export default function FamiliesPage() {
             <div className="space-y-2">
               <Label className={errors.phone_number ? "text-destructive" : ""}>Phone</Label>
               <Input 
+                autoComplete="new-phone"
                 value={editingItem?.phone_number || ""} 
                 onChange={e => updateField("phone_number", e.target.value)} 
                 className={errors.phone_number ? "border-destructive focus-visible:ring-destructive" : ""}
@@ -300,6 +316,7 @@ export default function FamiliesPage() {
               <Label className={errors.email ? "text-destructive" : ""}>Email</Label>
               <Input 
                 type="email" 
+                autoComplete="new-email"
                 value={editingItem?.email || ""} 
                 onChange={e => updateField("email", e.target.value)} 
                 className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}

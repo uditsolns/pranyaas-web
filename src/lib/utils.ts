@@ -18,13 +18,23 @@ export function formatDate(date: string | Date | undefined | null): string {
 
   const d = new Date(date);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-GB");
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
 }
 
 export function formatDateTime(date: string | Date | undefined | null): string {
   if (!date) return "—";
   const d = new Date(date);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleString("en-GB");
+  return d.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 

@@ -1,4 +1,5 @@
 import { Users, UserCog, ClipboardList, Calendar, AlertTriangle, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { StatCard } from "@/components/StatCard";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
         <div className="bg-card rounded-xl p-5 card-shadow border border-border/50">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Recent Visits</h3>
-            <a href="/visits" className="text-xs font-medium text-primary hover:underline">View All</a>
+            <Link to="/visits" className="text-xs font-medium text-primary hover:underline">View All</Link>
           </div>
           <div className="space-y-3">
             {visits.slice(0, 4).map(v => (
@@ -115,7 +116,7 @@ export default function AdminDashboard() {
         <div className="bg-card rounded-xl p-5 card-shadow border border-border/50">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Active Emergencies</h3>
-            <a href="/emergencies" className="text-xs font-medium text-primary hover:underline">View All</a>
+            <Link to="/emergencies" className="text-xs font-medium text-primary hover:underline">View All</Link>
           </div>
           <div className="space-y-3">
             {emergencies.slice(0, 4).map(e => (

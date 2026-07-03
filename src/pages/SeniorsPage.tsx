@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import {
   Search,
   Eye,
+  EyeOff,
   Pencil,
   Trash2,
   Loader2,
@@ -130,6 +131,7 @@ export default function SeniorsPage() {
     null,
   );
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const filtered = seniors.filter((p) => {
@@ -146,6 +148,7 @@ export default function SeniorsPage() {
   const openCreate = () => {
     setEditingSenior({ ...emptySenior });
     setErrors({});
+    setShowPassword(false);
     setDialogOpen(true);
   };
   const openEdit = (p: Senior) => {
@@ -578,6 +581,7 @@ export default function SeniorsPage() {
                   </Label>
                   <Input
                     type="email"
+                    autoComplete="new-email"
                     value={editingSenior?.email || ""}
                     onChange={(e) => updateField("email", e.target.value)}
                     placeholder="user@example.com"
@@ -598,6 +602,7 @@ export default function SeniorsPage() {
                     Phone <span className="text-destructive">*</span>
                   </Label>
                   <Input
+                    autoComplete="new-phone"
                     value={editingSenior?.phone || ""}
                     onChange={(e) => updateField("phone", e.target.value)}
                     placeholder="9876543210"
@@ -617,16 +622,32 @@ export default function SeniorsPage() {
                   <Label className={errors.password ? "text-destructive" : ""}>
                     Password <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    type="password"
-                    value={editingSenior?.password || ""}
-                    onChange={(e) => updateField("password", e.target.value)}
-                    className={
-                      errors.password
-                        ? "border-destructive focus-visible:ring-destructive"
-                        : ""
-                    }
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={editingSenior?.password || ""}
+                      onChange={(e) => updateField("password", e.target.value)}
+                      className={
+                        errors.password
+                          ? "border-destructive focus-visible:ring-destructive pr-10"
+                          : "pr-10"
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                   {errors.password && (
                     <p className="text-[10px] text-destructive font-medium">
                       {errors.password}
@@ -770,6 +791,10 @@ export default function SeniorsPage() {
                 }
               />
             </div>
+            
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:col-span-2 pt-4 border-t border-border/50">
+              Medical Information
+            </p>
             <div className="space-y-2 sm:col-span-2">
               <Label>Primary Diagnosis</Label>
               <Input
@@ -852,6 +877,10 @@ export default function SeniorsPage() {
                 }
               />
             </div>
+            
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:col-span-2 pt-4 border-t border-border/50">
+              Vitals & Baseline
+            </p>
             <div className="space-y-2">
               <Label>Baseline BP</Label>
               <Input
@@ -942,6 +971,10 @@ export default function SeniorsPage() {
                 </p>
               )}
             </div>
+            
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:col-span-2 pt-4 border-t border-border/50">
+              Insurance & Care Assignment
+            </p>
             <div className="space-y-2">
               <Label>Insurance Policy Name</Label>
               <Input

@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { TablePagination } from "@/components/TablePagination";
 import { usePagination } from "@/hooks/usePagination";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, Pencil, Trash2, CheckCircle, Loader2 } from "lucide-react";
+import { Search, Eye, EyeOff, Pencil, Trash2, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -52,6 +52,7 @@ export default function CareManagersPage() {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [patientsModalOpen, setPatientsModalOpen] = useState(false);
   const [viewingPatientsCM, setViewingPatientsCM] = useState<CareManager | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const filtered = cms.filter(cm => {
     const matchesSearch = (cm.name || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -62,7 +63,7 @@ export default function CareManagersPage() {
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered, 9);
 
-  const openCreate = () => { setEditingCM({ ...emptyCM }); setErrors({}); setDialogOpen(true); };
+  const openCreate = () => { setEditingCM({ ...emptyCM }); setErrors({}); setShowPassword(false); setDialogOpen(true); };
   const openEdit = (cm: CareManager) => {
     setEditingCM({
       ...cm,
@@ -278,6 +279,7 @@ export default function CareManagersPage() {
             <div className="space-y-2">
               <Label className={errors.phone ? "text-destructive" : ""}>Phone <span className="text-destructive">*</span></Label>
               <Input 
+                autoComplete="new-phone"
                 value={editingCM?.phone || ""} 
                 onChange={e => updateField("phone", e.target.value)} 
                 placeholder="e.g. 9876543212" 
@@ -289,6 +291,7 @@ export default function CareManagersPage() {
               <Label className={errors.email ? "text-destructive" : ""}>Email <span className="text-destructive">*</span></Label>
               <Input 
                 type="email" 
+                autoComplete="new-email"
                 value={editingCM?.email || ""} 
                 onChange={e => updateField("email", e.target.value)} 
                 placeholder="e.g. raj@gmail.com" 
@@ -299,13 +302,25 @@ export default function CareManagersPage() {
             {!editingCM?.id && (
               <div className="space-y-2">
                 <Label className={errors.password ? "text-destructive" : ""}>Password <span className="text-destructive">*</span></Label>
-                <Input 
-                  type="password" 
-                  value={editingCM?.password || ""} 
-                  onChange={e => updateField("password", e.target.value)} 
-                  placeholder="Minimum 6 characters" 
-                  className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
-                />
+                <div className="relative">
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    autoComplete="new-password"
+                    value={editingCM?.password || ""} 
+                    onChange={e => updateField("password", e.target.value)} 
+                    placeholder="Minimum 6 characters" 
+                    className={errors.password ? "border-destructive focus-visible:ring-destructive pr-10" : "pr-10"}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
                 {errors.password && <p className="text-[10px] text-destructive font-medium">{errors.password}</p>}
               </div>
             )}
