@@ -4,20 +4,30 @@
 
 import { formatDate, formatDateTime } from "@/lib/utils";
 
-export function exportCSV(filename: string, columns: { key: string; label: string }[], data: Record<string, any>[]) {
+export interface ExportColumn {
+  key: string;
+  label: string;
+  getValue?: (row: any) => any;
+}
+
+export function exportCSV(filename: string, columns: ExportColumn[], data: any[]) {
   const header = columns.map(c => `"${c.label}"`).join(",");
   const rows = data.map(row =>
     columns.map(c => {
-      const val = row[c.key] ?? "";
-      return `"${String(val).replace(/"/g, '""')}"`;
+      const val = c.getValue ? c.getValue(row) : row[c.key];
+      const strVal = val ?? "";
+      return `"${String(strVal).replace(/"/g, '""')}"`;
     }).join(",")
   );
   const csv = [header, ...rows].join("\n");
   downloadBlob(csv, `${filename}.csv`, "text/csv;charset=utf-8;");
 }
 
-export function exportPDF(title: string, columns: { key: string; label: string }[], data: Record<string, any>[]) {
-  const colWidths = columns.map(c => Math.max(c.label.length, ...data.map(r => String(r[c.key] ?? "").length)));
+export function exportPDF(title: string, columns: ExportColumn[], data: any[]) {
+  const colWidths = columns.map(c => Math.max(c.label.length, ...data.map(r => {
+    const val = c.getValue ? c.getValue(r) : r[c.key];
+    return String(val ?? "").length;
+  })));
   const totalChars = colWidths.reduce((a, b) => a + b, 0) + columns.length * 3;
   const pageWidth = Math.max(800, totalChars * 7);
 
@@ -39,7 +49,10 @@ export function exportPDF(title: string, columns: { key: string; label: string }
 <table><thead><tr>${columns.map(c => `<th>${c.label}</th>`).join("")}</tr></thead><tbody>`;
 
   for (const row of data) {
-    html += "<tr>" + columns.map(c => `<td>${escapeHtml(String(row[c.key] ?? "—"))}</td>`).join("") + "</tr>";
+    html += "<tr>" + columns.map(c => {
+      const val = c.getValue ? c.getValue(row) : row[c.key];
+      return `<td>${escapeHtml(String(val ?? "—"))}</td>`;
+    }).join("") + "</tr>";
   }
 
   html += `</tbody></table>

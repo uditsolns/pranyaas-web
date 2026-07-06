@@ -30,6 +30,7 @@ export interface BookedService {
   user_type: string;
   subject: string;
   description: string;
+  address?: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -295,6 +296,11 @@ export default function BookServicesPage() {
                 <div>
                   <p className="text-xs text-muted-foreground">Plan</p>
                   <p className="text-sm font-medium">{viewing.plan_id ? getPlanName(viewing.plan_id) : "—"}</p>
+                </div>
+                
+                <div className="col-span-2 mt-2 pt-2 border-t border-border/20">
+                  <p className="text-xs text-muted-foreground mb-1">Address</p>
+                  <p className="text-sm font-medium">{viewing.address || "—"}</p>
                 </div>
               </div>
               

@@ -258,6 +258,7 @@ export interface EmergencyAlert {
   latitude: string;
   longitude: string;
   status: string;
+  remark?: string;
   created_at: string;
   updated_at: string;
   patient?: {
@@ -348,6 +349,7 @@ export interface PlanServiceRequest {
   description: string;
   priority: string;
   status?: string;
+  admin_remark?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -395,6 +397,28 @@ export interface MedicineItem {
   dosage: string;
   quantity?: string;
   frequency?: string;
+  start_date?: string;
+  end_date?: string;
+  medicine_type?: string;
+  medicine_time?: string;
+  frequency_type?: string;
+  days?: string[];
+}
+
+export interface PlanFeature {
+  id: number;
+  plan_master_id: string | number;
+  feature_key: string;
+  is_enabled: string | number;
+}
+
+export interface Plan {
+  id: number;
+  plan_name: string;
+  description: string;
+  price: string;
+  duration_days: number;
+  features: PlanFeature[];
 }
 
 export interface MedicationReminder {

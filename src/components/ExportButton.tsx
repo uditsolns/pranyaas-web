@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { exportCSV, exportPDF } from "@/lib/export";
+import { exportCSV, exportPDF, ExportColumn } from "@/lib/export";
 
 interface ExportButtonProps {
   filename: string;
   title: string;
-  columns: { key: string; label: string }[];
-  data: Record<string, any>[];
+  columns: ExportColumn[];
+  data: any[];
 }
 
 export function ExportButton({ filename, title, columns, data }: ExportButtonProps) {

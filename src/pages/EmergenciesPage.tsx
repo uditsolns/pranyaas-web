@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExportButton } from "@/components/ExportButton";
-import { EmergencyAlert, Senior, EmergencyContact } from "@/types";
+import { EmergencyAlert, Senior, EmergencyContact, CareManager, Vendor } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AlertTriangle, CheckCircle, Clock, Eye, Loader2, Search, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 import { formatDateTime } from "@/lib/utils";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 export default function EmergenciesPage() {
   const { data: emergencies = [], isLoading } = useApiList<EmergencyAlert>("emergency-alerts", "/emergency-alerts");
   const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
+  const { data: careManagers = [] } = useApiList<CareManager>("care-managers", "/care-managers");
+  const { data: vendors = [] } = useApiList<Vendor>("vendors", "/vendors");
   const { role } = useAuth();
   const hasEdit = canEdit(role, "emergencies");
   const updateMutation = useApiUpdate<EmergencyAlert>("emergency-alerts", "/emergency-alerts", "Emergency");
@@ -28,6 +31,8 @@ export default function EmergenciesPage() {
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterSenior, setFilterSenior] = useState("all");
+  const [filterCM, setFilterCM] = useState("all");
   const [detailOpen, setDetailOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -68,7 +73,9 @@ export default function EmergenciesPage() {
       (e.triggered_by || "").toLowerCase().includes(search.toLowerCase()) ||
       getSeniorName(e.patient_id).toLowerCase().includes(search.toLowerCase());
     const matchesStatus = filterStatus === "all" || e.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesSenior = filterSenior === "all" || String(e.patient_id) === filterSenior;
+    const matchesCM = filterCM === "all" || String(e.patient?.care_manager?.id) === filterCM;
+    return matchesSearch && matchesStatus && matchesSenior && matchesCM;
   });
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
@@ -117,6 +124,20 @@ export default function EmergenciesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by ID, trigger, or senior..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
+        <Select value={filterSenior} onValueChange={v => { setFilterSenior(v); setPage(1); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="All Seniors" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Seniors</SelectItem>
+            {seniors.map(s => <SelectItem key={s.id} value={String(s.user_id)}>{s.full_name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterCM} onValueChange={v => { setFilterCM(v); setPage(1); }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Care Managers" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Care Managers</SelectItem>
+            {careManagers.map(c => <SelectItem key={c.id} value={String(c.user_id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setPage(1); }}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
@@ -140,8 +161,8 @@ export default function EmergenciesPage() {
                     <AlertTriangle className={`h-5 w-5 ${e.status === "active" ? "text-destructive" : e.status === "acknowledged" ? "text-warning" : "text-success"}`} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Emergency #{e.id}</p>
-                    <p className="text-xs text-muted-foreground">Triggered by: {e.triggered_by} · {getSeniorName(e.patient_id)}</p>
+                    <p className="text-sm font-semibold text-foreground">{getSeniorName(e.patient_id)} - Emergency #{e.id}</p>
+                    <p className="text-xs text-muted-foreground">Triggered by: {e.triggered_by}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -235,6 +256,29 @@ export default function EmergenciesPage() {
                 <div><p className="text-xs text-muted-foreground">Created</p><p className="text-sm font-medium">{formatDateTime(viewing.created_at)}</p></div>
                 {viewing.latitude && <div><p className="text-xs text-muted-foreground">Location</p><AddressDisplay lat={viewing.latitude} lon={viewing.longitude} /></div>}
               </div>
+              
+              {viewing.latitude && viewing.longitude && (
+                <div className="mt-4 border-t pt-4">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">Location & Nearby Vendors</p>
+                  <div className="h-[300px] rounded-lg overflow-hidden border border-border relative z-0">
+                    <MapContainer center={[parseFloat(viewing.latitude), parseFloat(viewing.longitude)]} zoom={13} style={{ height: "100%", width: "100%" }}>
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <Marker position={[parseFloat(viewing.latitude), parseFloat(viewing.longitude)]}>
+                        <Popup>Emergency Location</Popup>
+                      </Marker>
+                      {vendors.filter(v => v.latitude && v.longitude).map(v => (
+                        <Marker key={v.id} position={[parseFloat(v.latitude!), parseFloat(v.longitude!)]}>
+                          <Popup>
+                            <strong>{v.vendor_name}</strong><br />
+                            Type: {v.type}<br />
+                            Phone: {v.mobile}
+                          </Popup>
+                        </Marker>
+                      ))}
+                    </MapContainer>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>Close</Button>
               </div>
@@ -290,6 +334,7 @@ export default function EmergenciesPage() {
             <div className="space-y-2">
               <Label>Senior <span className="text-destructive">*</span></Label>
               <Select 
+                disabled={isEditing}
                 value={editingItem?.patient_id ? (() => {
                   const p = seniors.find(p => String(p.id) === String(editingItem.patient_id) || String(p.user_id) === String(editingItem.patient_id));
                   return p ? String(p.user_id) : String(editingItem.patient_id);
@@ -325,6 +370,21 @@ export default function EmergenciesPage() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {(() => {
+              const originalStatus = isEditing && editingItem?.id ? emergencies.find(e => e.id === editingItem.id)?.status : null;
+              const statusChanged = isEditing && originalStatus && editingItem?.status !== originalStatus;
+              
+              if (statusChanged) {
+                return (
+                  <div className="space-y-2">
+                    <Label>Remark for Status Change <span className="text-destructive">*</span></Label>
+                    <Input value={editingItem?.remark || ""} onChange={e => setEditingItem(prev => ({ ...prev!, remark: e.target.value }))} placeholder="Reason for changing status..." />
+                  </div>
+                );
+              }
+              return null;
+            })()}
             <div className="flex justify-end gap-2 mt-6">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>

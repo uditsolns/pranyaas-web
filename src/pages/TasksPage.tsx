@@ -48,6 +48,16 @@ export default function TasksPage() {
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("Care Manager");
+  const [filterSenior, setFilterSenior] = useState("all");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+
+  const getPriorityLabel = (p?: string) => {
+    if (String(p) === "1") return "High";
+    if (String(p) === "2") return "Medium";
+    if (String(p) === "3") return "Low";
+    return p || "—";
+  };
 
   const getSeniorName = (id: string | number) => {
     if (!id) return "N/A";
@@ -80,11 +90,17 @@ export default function TasksPage() {
         relName.toLowerCase().includes(search.toLowerCase());
         
       const matchesStatus = filterStatus === "all" || t.status === filterStatus;
+      const matchesSenior = filterSenior === "all" || String(t.patient_id) === filterSenior;
+      
+      const taskDate = t.due_date ? t.due_date.split(" ")[0] : "";
+      const matchesDateFrom = !filterDateFrom || taskDate >= filterDateFrom;
+      const matchesDateTo = !filterDateTo || taskDate <= filterDateTo;
+      
       const matchesTab = (activeTab === "Care Manager" && (t.category === "Care Manager" || !t.category)) || 
                          (activeTab === "Family" && (t.category === "Family" || t.category === "Relative"));
-      return matchesSearch && matchesStatus && matchesTab;
+      return matchesSearch && matchesStatus && matchesSenior && matchesDateFrom && matchesDateTo && matchesTab;
     });
-  }, [tasks, search, filterStatus, activeTab, seniors, cms, relatives]);
+  }, [tasks, search, filterStatus, filterSenior, filterDateFrom, filterDateTo, activeTab, seniors, cms, relatives]);
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
@@ -130,7 +146,15 @@ export default function TasksPage() {
       
       if (p) {
         // Auto-select Care Manager
-        const cm = cms.find(c => String(c.id) === String(p.care_manager_id) || String(c.user_id) === String(p.care_manager_id));
+        const cm = cms.find(c => {
+          if (Array.isArray(c.patient_id)) {
+            return c.patient_id.some((cp: any) => String(cp.patient_id) === String(p.id));
+          } else if (c.patient_id) {
+            return String(c.patient_id) === String(p.id);
+          }
+          return false;
+        }) || cms.find(c => String(c.id) === String(p.care_manager_id) || String(c.user_id) === String(p.care_manager_id));
+        
         if (cm) updates.care_manager_id = String(cm.user_id);
 
         // Auto-select Family
@@ -174,9 +198,34 @@ export default function TasksPage() {
       </Tabs>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search tasks..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+        </div>
+        <Select value={filterSenior} onValueChange={v => { setFilterSenior(v); setPage(1); }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Seniors" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Seniors</SelectItem>
+            {seniors.map(s => <SelectItem key={s.id} value={String(s.user_id)}>{s.full_name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2 bg-card border border-input rounded-md px-2 focus-within:ring-1 focus-within:ring-ring">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">From</span>
+          <Input 
+            type="date" 
+            value={filterDateFrom} 
+            onChange={e => { setFilterDateFrom(e.target.value); setPage(1); }} 
+            className="w-[130px] border-0 h-9 p-0 focus-visible:ring-0 shadow-none bg-transparent"
+          />
+        </div>
+        <div className="flex items-center gap-2 bg-card border border-input rounded-md px-2 focus-within:ring-1 focus-within:ring-ring">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">To</span>
+          <Input 
+            type="date" 
+            value={filterDateTo} 
+            onChange={e => { setFilterDateTo(e.target.value); setPage(1); }} 
+            className="w-[130px] border-0 h-9 p-0 focus-visible:ring-0 shadow-none bg-transparent"
+          />
         </div>
         <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setPage(1); }}>
           <SelectTrigger className="w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -220,7 +269,7 @@ export default function TasksPage() {
                     {formatDate(t.due_date)} 
                     {t.task_time && <span className="text-muted-foreground ml-2 text-xs">{t.task_time}</span>}
                   </td>
-                  <td className="p-4"><StatusBadge status={t.priority || "1"} /></td>
+                  <td className="p-4"><StatusBadge status={getPriorityLabel(t.priority || "1")} /></td>
                   <td className="p-4"><StatusBadge status={t.status || "pending"} /></td>
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-1">
@@ -248,7 +297,7 @@ export default function TasksPage() {
                 <div><p className="text-xs text-muted-foreground">Task Time</p><p className="text-sm font-medium">{viewingTask.task_time || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{viewingTask.patient_id ? getSeniorName(viewingTask.patient_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewingTask.care_manager_id ? getCMName(viewingTask.care_manager_id) : "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Priority</p><StatusBadge status={viewingTask.priority} /></div>
+                <div><p className="text-xs text-muted-foreground">Priority</p><StatusBadge status={getPriorityLabel(viewingTask.priority)} /></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingTask.status} /></div>
               </div>
               {viewingTask.description && <div><p className="text-xs text-muted-foreground">Description</p><p className="text-sm mt-1">{viewingTask.description}</p></div>}
@@ -288,7 +337,7 @@ export default function TasksPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Task Category <span className="text-destructive">*</span></Label>
+              <Label>Task Assigned by <span className="text-destructive">*</span></Label>
               <Select value={editingTask?.category === "Relative" ? "Family" : (editingTask?.category || "Care Manager")} onValueChange={v => updateField("category", v)}>
                 <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>

@@ -47,6 +47,8 @@ export default function MedicationRemindersPage() {
   const [editingItem, setEditingItem] = useState<Partial<MedicationReminder> | null>(null);
   const [viewingItem, setViewingItem] = useState<MedicationReminder | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [medicinesModalOpen, setMedicinesModalOpen] = useState(false);
+  const [selectedMedsReminder, setSelectedMedsReminder] = useState<MedicationReminder | null>(null);
 
   const getSeniorName = (id: string | number) => {
     const p = seniors.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
@@ -65,15 +67,39 @@ export default function MedicationRemindersPage() {
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
   const openCreate = () => { setEditingItem({ ...emptyMedication }); setDialogOpen(true); };
-  const openEdit = (m: MedicationReminder) => { setEditingItem({ ...m }); setDialogOpen(true); };
+  const openEdit = (m: MedicationReminder) => { 
+    const med1 = (m.medicines && m.medicines[0]) as any;
+    setEditingItem({ 
+      ...m,
+      medicine_type: m.medicine_type || med1?.medicine_type || "morning",
+      medicine_time: m.medicine_time || med1?.medicine_time || "",
+      start_date: m.start_date || med1?.start_date || "",
+      end_date: m.end_date || med1?.end_date || "",
+      frequency: m.frequency || med1?.frequency || med1?.frequency_type || "",
+    }); 
+    setDialogOpen(true); 
+  };
 
   const handleSave = () => {
     if (!editingItem?.patient_id || !(editingItem.medicines?.length || editingItem.medicine_name?.trim())) return;
     
+    const payload = {
+      patient_id: editingItem.patient_id,
+      status: editingItem.status,
+      medicines: (editingItem.medicines || []).map(med => ({
+        ...med,
+        start_date: editingItem.start_date,
+        end_date: editingItem.end_date,
+        medicine_type: editingItem.medicine_type,
+        medicine_time: editingItem.medicine_time,
+        frequency: editingItem.frequency,
+      })),
+    };
+    
     if (editingItem.id) {
-      updateMutation.mutate({ id: editingItem.id, data: editingItem }, { onSuccess: () => setDialogOpen(false) });
+      updateMutation.mutate({ id: editingItem.id, data: payload as any }, { onSuccess: () => setDialogOpen(false) });
     } else {
-      createMutation.mutate(editingItem, { onSuccess: () => setDialogOpen(false) });
+      createMutation.mutate(payload as any, { onSuccess: () => setDialogOpen(false) });
     }
   };
 
@@ -98,12 +124,12 @@ export default function MedicationRemindersPage() {
         onAction={hasEdit ? openCreate : undefined}
       >
         <ExportButton filename="medications" title="Medications Report" columns={[
-          { key: "medicine_name", label: "Medicine" }, 
-          { key: "medicine_type", label: "Type" },
-          { key: "dosage", label: "Dosage" }, 
-          { key: "frequency", label: "Frequency" },
-          { key: "start_date", label: "Start Date" }, 
-          { key: "end_date", label: "End Date" },
+          { key: "medicine_name", label: "Medicine", getValue: m => m.medicines?.length ? m.medicines.map((med: any) => med.medicine_name).join(', ') : m.medicine_name }, 
+          { key: "medicine_type", label: "Type", getValue: m => m.medicine_type || m.medicines?.[0]?.medicine_type || "" },
+          { key: "dosage", label: "Dosage", getValue: m => m.medicines?.length ? `Multiple (${m.medicines.length})` : m.dosage }, 
+          { key: "frequency", label: "Frequency", getValue: m => m.frequency || m.medicines?.[0]?.frequency || m.medicines?.[0]?.frequency_type || "" },
+          { key: "start_date", label: "Start Date", getValue: m => m.start_date || m.medicines?.[0]?.start_date || "" }, 
+          { key: "end_date", label: "End Date", getValue: m => m.end_date || m.medicines?.[0]?.end_date || "" },
           { key: "status", label: "Status" },
         ]} data={filtered} />
       </PageHeader>
@@ -137,15 +163,27 @@ export default function MedicationRemindersPage() {
                     {m.medicines?.length ? m.medicines.map(med => med.medicine_name).join(', ') : m.medicine_name}
                   </td>
                   <td className="p-4 text-sm text-foreground capitalize">
-                    {m.medicine_type} {m.medicine_time}
+                    {m.medicine_type || m.medicines?.[0]?.medicine_type || "—"} {m.medicine_time || m.medicines?.[0]?.medicine_time || ""}
                   </td>
                   <td className="p-4 text-sm text-foreground">
-                    {m.medicines?.length ? <span className="text-xs text-muted-foreground">Multiple ({m.medicines.length})</span> : <>{m.dosage}</>}
-                    <span className="text-muted-foreground text-xs ml-1">({m.frequency})</span>
+                    {m.medicines && m.medicines.length > 1 ? (
+                      <Button variant="link" className="p-0 h-auto text-xs text-primary" onClick={() => { setSelectedMedsReminder(m); setMedicinesModalOpen(true); }}>
+                        Multiple ({m.medicines.length}) - View
+                      </Button>
+                    ) : (
+                      <div className="flex flex-col items-start gap-1">
+                        <span>{m.medicines?.[0]?.dosage || m.dosage} <span className="text-muted-foreground text-xs">({m.medicines?.[0]?.frequency_type || m.medicines?.[0]?.frequency || m.frequency || "—"})</span></span>
+                        {m.medicines?.length === 1 && (
+                          <Button variant="link" className="p-0 h-auto text-[10px] text-muted-foreground" onClick={() => { setSelectedMedsReminder(m); setMedicinesModalOpen(true); }}>
+                            View Details
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="p-4 text-sm text-foreground">
-                    <div className="text-xs">{formatDate(m.start_date)} to</div>
-                    <div className="text-xs font-medium">{formatDate(m.end_date)}</div>
+                    <div className="text-xs">{formatDate(m.start_date || m.medicines?.[0]?.start_date || "")} to</div>
+                    <div className="text-xs font-medium">{formatDate(m.end_date || m.medicines?.[0]?.end_date || "")}</div>
                   </td>
                   <td className="p-4"><StatusBadge status={m.status || "pending"} /></td>
                   <td className="p-4">
@@ -172,9 +210,9 @@ export default function MedicationRemindersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Senior</p><p className="text-sm font-medium">{getSeniorName(viewingItem.patient_id)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingItem.status || "pending"} /></div>
-                <div><p className="text-xs text-muted-foreground">Type/Time</p><p className="text-sm font-medium capitalize">{viewingItem.medicine_type} {viewingItem.medicine_time}</p></div>
-                <div><p className="text-xs text-muted-foreground">Frequency</p><p className="text-sm font-medium">{viewingItem.frequency}</p></div>
-                <div><p className="text-xs text-muted-foreground">Period</p><p className="text-sm font-medium">{formatDate(viewingItem.start_date)} to {formatDate(viewingItem.end_date)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Type/Time</p><p className="text-sm font-medium capitalize">{viewingItem.medicine_type || viewingItem.medicines?.[0]?.medicine_type || "—"} {viewingItem.medicine_time || viewingItem.medicines?.[0]?.medicine_time || ""}</p></div>
+                <div><p className="text-xs text-muted-foreground">Frequency</p><p className="text-sm font-medium">{viewingItem.frequency || viewingItem.medicines?.[0]?.frequency || viewingItem.medicines?.[0]?.frequency_type || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Period</p><p className="text-sm font-medium">{formatDate(viewingItem.start_date || viewingItem.medicines?.[0]?.start_date || "")} to {formatDate(viewingItem.end_date || viewingItem.medicines?.[0]?.end_date || "")}</p></div>
               </div>
               
               <div className="mt-4 border-t pt-4">
@@ -318,6 +356,38 @@ export default function MedicationRemindersPage() {
       </Dialog>
 
       <DeleteConfirmDialog open={deleteTarget !== null} onOpenChange={() => setDeleteTarget(null)} onConfirm={handleDelete} title="Delete Medication?" />
+
+      {/* Dosage & Frequency Modal */}
+      <Dialog open={medicinesModalOpen} onOpenChange={setMedicinesModalOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Dosage & Frequency Details</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            {selectedMedsReminder?.medicines?.map((med, i) => (
+              <div key={i} className="bg-secondary/10 p-3 rounded-lg text-sm border border-border/50">
+                <div className="font-semibold text-base mb-2 text-primary">{med.medicine_name}</div>
+                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
+                  <div><span className="text-muted-foreground">Dosage:</span> <span className="font-medium">{med.dosage}</span></div>
+                  <div><span className="text-muted-foreground">Quantity:</span> <span className="font-medium">{med.quantity}</span></div>
+                  <div><span className="text-muted-foreground">Time:</span> <span className="font-medium capitalize">{med.medicine_type} {med.medicine_time}</span></div>
+                  <div><span className="text-muted-foreground">Frequency:</span> <span className="font-medium capitalize">{med.frequency_type || med.frequency || "—"}</span></div>
+                  <div><span className="text-muted-foreground">Period:</span> <span className="font-medium">{med.start_date ? formatDate(med.start_date) : "—"} to {med.end_date ? formatDate(med.end_date) : "—"}</span></div>
+                </div>
+                {med.days && med.days.length > 0 && (
+                  <div className="mt-2 text-xs">
+                    <span className="text-muted-foreground">Days:</span> <span className="font-medium">{med.days.join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+            {(!selectedMedsReminder?.medicines || selectedMedsReminder.medicines.length === 0) && (
+              <p className="text-sm text-muted-foreground text-center py-4">No medicine details available.</p>
+            )}
+          </div>
+          <div className="flex justify-end mt-2">
+            <Button variant="outline" onClick={() => setMedicinesModalOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

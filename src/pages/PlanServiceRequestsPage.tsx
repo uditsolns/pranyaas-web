@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { PlanServiceRequest, ApiUser } from "@/types";
+import { PlanServiceRequest, ApiUser, Senior, Family, CareManager } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
@@ -28,6 +28,9 @@ export default function PlanServiceRequestsPage() {
   const { data: requests = [], isLoading, isError, error } = useApiList<PlanServiceRequest>("plan-service-requests", "/plan-service-requests");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
   const { data: plans = [] } = useApiList<any>("plans", "/plans-with-features");
+  const { data: seniors = [] } = useApiList<Senior>("patients", "/patients");
+  const { data: families = [] } = useApiList<Family>("relatives", "/relatives");
+  const { data: careManagers = [] } = useApiList<CareManager>("care-managers", "/care-managers");
 
   const createMutation = useApiCreate<PlanServiceRequest>("plan-service-requests", "/plan-service-requests", "Plan Service Request");
   const updateMutation = useApiUpdate<PlanServiceRequest>("plan-service-requests", "/plan-service-requests", "Plan Service Request");
@@ -39,11 +42,30 @@ export default function PlanServiceRequestsPage() {
   const [editingRequest, setEditingRequest] = useState<Partial<PlanServiceRequest> | null>(null);
   const [viewingRequest, setViewingRequest] = useState<PlanServiceRequest | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [filterCM, setFilterCM] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
 
-  const getUserName = (id: string | number) => {
-    if (!id) return "N/A";
-    const u = users.find(u => String(u.id) === String(id));
-    return u?.name || `User #${id}`;
+  const getUserInfo = (userId: string | number) => {
+    if (!userId) return { name: "—", role: "—", cmName: "—", cmId: "" };
+    
+    // Check if it's a relative
+    const family = families.find(f => String(f.user_id) === String(userId));
+    if (family) {
+      const patient = family.patient || seniors.find(s => String(s.user_id) === String(family.patient_id) || String(s.id) === String(family.patient_id));
+      const cm = patient?.care_manager || careManagers.find(c => String(c.id) === String(patient?.care_manager_id));
+      return { name: family.relative_name, role: "Relative", cmName: cm?.name || "—", cmId: cm?.id || "" };
+    }
+    
+    // Check if it's a senior
+    const senior = seniors.find(s => String(s.user_id) === String(userId) || String(s.id) === String(userId));
+    if (senior) {
+      const cm = senior.care_manager || careManagers.find(c => String(c.id) === String(senior.care_manager_id));
+      return { name: senior.full_name, role: "Senior", cmName: cm?.name || "—", cmId: cm?.id || "" };
+    }
+    
+    // Fallback to basic user
+    const u = users.find(u => String(u.id) === String(userId));
+    return { name: u?.name || `User #${userId}`, role: "User", cmName: "—", cmId: "" };
   };
 
   const getPlanName = (id: string | number) => {
@@ -54,11 +76,18 @@ export default function PlanServiceRequestsPage() {
 
   const filtered = useMemo(() => {
     return requests.filter(r => {
-      const uName = r.user_id ? getUserName(r.user_id) : "";
-      return (r.subject || "").toLowerCase().includes(search.toLowerCase()) ||
-             uName.toLowerCase().includes(search.toLowerCase());
+      const info = r.user_id ? getUserInfo(r.user_id) : null;
+      const uName = info ? info.name : "";
+      
+      const matchesSearch = (r.subject || "").toLowerCase().includes(search.toLowerCase()) ||
+                            uName.toLowerCase().includes(search.toLowerCase());
+                            
+      const matchesCM = filterCM === "all" || (info && String(info.cmId) === filterCM);
+      const matchesPriority = filterPriority === "all" || r.priority === filterPriority;
+      
+      return matchesSearch && matchesCM && matchesPriority;
     });
-  }, [requests, search, users]);
+  }, [requests, search, users, seniors, families, careManagers, filterCM, filterPriority]);
 
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
@@ -109,6 +138,22 @@ export default function PlanServiceRequestsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search requests..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
+        <Select value={filterPriority} onValueChange={v => { setFilterPriority(v); setPage(1); }}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Priority" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priorities</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterCM} onValueChange={v => { setFilterCM(v); setPage(1); }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Care Managers" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Care Managers</SelectItem>
+            {careManagers.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="bg-card rounded-xl card-shadow border border-border/50 overflow-hidden">
@@ -118,6 +163,7 @@ export default function PlanServiceRequestsPage() {
               <tr className="border-b border-border/50 bg-secondary/30">
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Subject</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">User</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">Care Manager</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Plan</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Priority</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Status</th>
@@ -130,7 +176,12 @@ export default function PlanServiceRequestsPage() {
               ) : paged.map(r => (
                 <tr key={r.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-4 text-sm font-medium text-foreground">{r.subject}</td>
-                  <td className="p-4 text-sm text-foreground">{r.user_id ? getUserName(r.user_id) : "—"}</td>
+                  <td className="p-4 text-sm text-foreground">
+                    {r.user_id ? (() => { const i = getUserInfo(r.user_id); return `${i.name} (${i.role})`; })() : "—"}
+                  </td>
+                  <td className="p-4 text-sm text-foreground">
+                    {r.user_id ? getUserInfo(r.user_id).cmName : "—"}
+                  </td>
                   <td className="p-4 text-sm text-foreground">{r.plan_id ? getPlanName(r.plan_id) : "—"}</td>
                   <td className="p-4"><StatusBadge status={r.priority || "medium"} /></td>
                   <td className="p-4"><StatusBadge status={r.status || "pending"} /></td>
@@ -156,7 +207,8 @@ export default function PlanServiceRequestsPage() {
             <div className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Subject</p><p className="text-sm font-medium">{viewingRequest.subject}</p></div>
-                <div><p className="text-xs text-muted-foreground">User</p><p className="text-sm font-medium">{viewingRequest.user_id ? getUserName(viewingRequest.user_id) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">User</p><p className="text-sm font-medium">{viewingRequest.user_id ? (() => { const i = getUserInfo(viewingRequest.user_id); return `${i.name} (${i.role})`; })() : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Care Manager</p><p className="text-sm font-medium">{viewingRequest.user_id ? getUserInfo(viewingRequest.user_id).cmName : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Plan</p><p className="text-sm font-medium">{viewingRequest.plan_id ? getPlanName(viewingRequest.plan_id) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Priority</p><StatusBadge status={viewingRequest.priority} /></div>
                 <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewingRequest.status || "pending"} /></div>
@@ -185,7 +237,7 @@ export default function PlanServiceRequestsPage() {
             </div>
             <div className="space-y-2">
               <Label>User</Label>
-              <Select value={String(editingRequest?.user_id || "")} onValueChange={v => updateField("user_id", v)}>
+              <Select disabled={!!editingRequest?.id} value={String(editingRequest?.user_id || "")} onValueChange={v => updateField("user_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select User..." /></SelectTrigger>
                 <SelectContent>
                   {users.map(u => <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>)}
@@ -194,7 +246,7 @@ export default function PlanServiceRequestsPage() {
             </div>
             <div className="space-y-2">
               <Label>Plan</Label>
-              <Select value={String(editingRequest?.plan_id || "")} onValueChange={v => updateField("plan_id", v)}>
+              <Select disabled={!!editingRequest?.id} value={String(editingRequest?.plan_id || "")} onValueChange={v => updateField("plan_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select Plan..." /></SelectTrigger>
                 <SelectContent>
                   {plans.map((p: any) => <SelectItem key={p.id} value={String(p.id)}>{p.plan_name}</SelectItem>)}
@@ -224,6 +276,21 @@ export default function PlanServiceRequestsPage() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {(() => {
+              const originalStatus = editingRequest?.id ? requests.find(r => r.id === editingRequest.id)?.status : null;
+              const statusChanged = editingRequest?.id && originalStatus && editingRequest?.status !== originalStatus;
+              
+              if (statusChanged) {
+                return (
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Remark for Status Change <span className="text-destructive">*</span></Label>
+                    <Input value={editingRequest?.admin_remark || ""} onChange={e => updateField("admin_remark", e.target.value)} placeholder="Reason for changing status..." />
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

@@ -233,7 +233,7 @@ export default function EventsPage() {
                   <img 
                     src={getStorageUrl(viewingEvent.banner_image)!} 
                     alt={viewingEvent.event_name} 
-                    className="w-full h-40 object-cover rounded-lg cursor-pointer transition-opacity group-hover:opacity-90" 
+                    className="w-full h-40 object-contain rounded-lg cursor-pointer transition-opacity group-hover:opacity-90" 
                     onClick={() => setPreviewImage(getStorageUrl(viewingEvent.banner_image)!)}
                   />
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -292,7 +292,7 @@ export default function EventsPage() {
               <Label>Banner Image</Label>
               {bannerPreview ? (
                 <div className="relative">
-                  <img src={bannerPreview} alt="Banner preview" className="w-full h-40 object-cover rounded-lg border border-border" />
+                  <img src={bannerPreview} alt="Banner preview" className="w-full h-40 object-contain rounded-lg border border-border" />
                   <Button
                     type="button"
                     variant="destructive"

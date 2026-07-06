@@ -28,7 +28,7 @@ const emptyCM: CMFormState = {
   registration_number: "", languages_known: "", cpr_certified: "",
   aadhaar_no: "", pan_no: "", years_of_experience: "",
   police_verification_status: "", background_verification_status: "",
-  supervisor_id: "", region: "",
+  supervisor_id: "", region: "", patient_id: [],
 };
 
 export default function CareManagersPage() {
@@ -36,6 +36,7 @@ export default function CareManagersPage() {
   const { role } = useAuth();
   const hasEdit = canEdit(role, "care-managers");
   const { data: cms = [], isLoading } = useApiList<CareManager>("care-managers", "/care-managers");
+  const { data: seniors = [] } = useApiList<any>("patients", "/patients");
   const { data: users = [] } = useApiList<ApiUser>("users", "/users");
   const adminUsers = users.filter(u => String(u.role_id) === "1");
   const createMutation = useApiCreate<any>("care-managers", "/care-managers", "Care Manager");
@@ -68,7 +69,8 @@ export default function CareManagersPage() {
     setEditingCM({
       ...cm,
       phone: cm.user?.phone || "",
-      email: cm.user?.email || ""
+      email: cm.user?.email || "",
+      patient_id: Array.isArray(cm.patient_id) ? cm.patient_id : (cm.patient_id ? [cm.patient_id] : [])
     });
     setErrors({});
     setDialogOpen(true);
@@ -142,7 +144,7 @@ export default function CareManagersPage() {
     }
   };
 
-  const updateField = (field: keyof CMFormState, value: string) => {
+  const updateField = (field: keyof CMFormState, value: any) => {
     setErrors(prev => {
       if (!prev[field]) return prev;
       const next = { ...prev };
@@ -377,6 +379,51 @@ export default function CareManagersPage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Assigned Seniors</Label>
+              {editingCM?.patient_id && Array.isArray(editingCM.patient_id) && editingCM.patient_id.length > 0 && (
+                <div className="flex flex-col gap-2 mb-2">
+                  {editingCM.patient_id.map((p: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between bg-secondary/30 px-3 py-2 rounded-md">
+                      <span className="text-sm font-medium">{p.patient_name || p.senior_name || `Senior #${p.patient_id}`}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                        const newPatients = [...(editingCM.patient_id || [])];
+                        newPatients.splice(idx, 1);
+                        updateField("patient_id", newPatients);
+                      }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Select 
+                value="" 
+                onValueChange={v => {
+                  const p = seniors.find((senior: any) => String(senior.id) === String(v));
+                  if (p) {
+                    const currentPatients = Array.isArray(editingCM?.patient_id) ? editingCM.patient_id : [];
+                    if (!currentPatients.some((cp: any) => String(cp.patient_id) === String(p.id))) {
+                      const newPatient = {
+                        user_id: String(p.user_id),
+                        patient_id: String(p.id),
+                        patient_name: p.full_name
+                      };
+                      updateField("patient_id", [...currentPatients, newPatient]);
+                    }
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Assign Senior..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {seniors.filter((p: any) => !(Array.isArray(editingCM?.patient_id) ? editingCM.patient_id : []).some((cp: any) => String(cp.patient_id) === String(p.id))).map((p: any) => (
+                    <SelectItem key={p.id} value={String(p.id)}>{p.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Assigned Zone(City)</Label>
               <Input value={editingCM?.assigned_zone || ""} onChange={e => updateField("assigned_zone", e.target.value)} placeholder="e.g. South Zone" />
             </div>
@@ -437,60 +484,100 @@ export default function CareManagersPage() {
 
       {/* Patients Dialog */}
       <Dialog open={patientsModalOpen} onOpenChange={setPatientsModalOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader><DialogTitle>Patients Assigned to {viewingPatientsCM?.name}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Assign Seniors to {viewingPatientsCM?.name}</DialogTitle></DialogHeader>
           <div className="mt-4">
-            {viewingPatientsCM && Array.isArray(viewingPatientsCM.patient_id) && viewingPatientsCM.patient_id.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-muted text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Patient ID</th>
-                      <th className="px-4 py-3 font-medium">Patient Name</th>
-                      <th className="px-4 py-3 font-medium text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {viewingPatientsCM.patient_id.map((p: any) => (
-                      <tr key={p.id || p.patient_id} className="hover:bg-muted/50">
-                        <td className="px-4 py-3">{p.patient_id}</td>
-                        <td className="px-4 py-3 font-medium">{p.patient_name}</td>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Patient ID</th>
+                    <th className="px-4 py-3 font-medium">Patient Name</th>
+                    <th className="px-4 py-3 font-medium">Care Manager</th>
+                    <th className="px-4 py-3 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {seniors.map((p: any) => {
+                    const isAssignedToThis = viewingPatientsCM && Array.isArray(viewingPatientsCM.patient_id) 
+                      ? viewingPatientsCM.patient_id.some((cp: any) => String(cp.patient_id) === String(p.id)) 
+                      : (viewingPatientsCM && viewingPatientsCM.patient_id && String(viewingPatientsCM.patient_id) === String(p.id));
+                    
+                    let assignedCMName = "Not Assigned";
+                    if (isAssignedToThis) {
+                      assignedCMName = viewingPatientsCM.name;
+                    } else if (p.care_manager) {
+                      assignedCMName = p.care_manager.name || "Assigned";
+                    } else {
+                       const assignedCM = cms.find(c => Array.isArray(c.patient_id) ? c.patient_id.some((cp: any) => String(cp.patient_id) === String(p.id)) : false);
+                       if (assignedCM) assignedCMName = assignedCM.name;
+                    }
+
+                    return (
+                      <tr key={p.id} className="hover:bg-muted/50">
+                        <td className="px-4 py-3">{p.id}</td>
+                        <td className="px-4 py-3 font-medium">{p.full_name}</td>
+                        <td className="px-4 py-3">
+                           {isAssignedToThis ? (
+                             <span className="text-primary font-medium">{assignedCMName}</span>
+                           ) : assignedCMName !== "Not Assigned" ? (
+                             <span className="text-muted-foreground">{assignedCMName}</span>
+                           ) : (
+                             <span className="text-muted-foreground italic">Not Assigned</span>
+                           )}
+                        </td>
                         <td className="px-4 py-3 text-right">
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/seniors/${p.patient_id}`)}>
-                            View Profile
-                          </Button>
+                          {isAssignedToThis ? (
+                            <Button size="sm" variant="outline" onClick={() => navigate(`/seniors/${p.id}`)}>
+                              View Profile
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="default" 
+                              disabled={updateMutation.isPending}
+                              onClick={() => {
+                                if (!viewingPatientsCM) return;
+                                const currentPatients = Array.isArray(viewingPatientsCM.patient_id) ? viewingPatientsCM.patient_id : [];
+                                const newPatient = {
+                                  user_id: String(p.user_id),
+                                  patient_id: String(p.id),
+                                  patient_name: p.full_name
+                                };
+                                const updatedPatients = [...currentPatients, newPatient];
+                                
+                                const { id, user, created_at, updated_at, password, ...cmData } = viewingPatientsCM as any;
+                                const payload = {
+                                  ...cmData,
+                                  patient_id: updatedPatients,
+                                  years_of_experience: viewingPatientsCM.years_of_experience ? parseInt(String(viewingPatientsCM.years_of_experience)) : 0
+                                };
+                                
+                                updateMutation.mutate({ id: viewingPatientsCM.id, data: payload }, {
+                                  onSuccess: () => {
+                                    toast.success(`${p.full_name} assigned to ${viewingPatientsCM.name}`);
+                                    setViewingPatientsCM({ ...viewingPatientsCM, patient_id: updatedPatients });
+                                  }
+                                });
+                              }}
+                            >
+                              Assign
+                            </Button>
+                          )}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : viewingPatientsCM && viewingPatientsCM.patient_id ? (
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-muted text-muted-foreground">
+                    );
+                  })}
+                  {seniors.length === 0 && (
                     <tr>
-                      <th className="px-4 py-3 font-medium">Patient ID</th>
-                      <th className="px-4 py-3 font-medium text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    <tr className="hover:bg-muted/50">
-                      <td className="px-4 py-3">{viewingPatientsCM.patient_id}</td>
-                      <td className="px-4 py-3 text-right">
-                        <Button size="sm" variant="outline" onClick={() => navigate(`/seniors/${viewingPatientsCM.patient_id}`)}>
-                          View Profile
-                        </Button>
+                      <td colSpan={4} className="text-center py-8 text-muted-foreground">
+                        No seniors found.
                       </td>
                     </tr>
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No patients assigned.
-              </div>
-            )}
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

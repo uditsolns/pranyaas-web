@@ -18,9 +18,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
 
+import { Link } from "react-router-dom";
+import { Eye, Calendar } from "lucide-react";
+
 const emptyVital: Partial<VitalRecord> = {
   patient_id: "", recorded_by: "", care_visits_id: "", bp: "", heart_rate: "",
-  sugar_level: "", temperature: "", recorded_at: "",
+  sugar_level: "", temperature: "", spo2: "", recorded_at: "",
 };
 
 export default function VitalsPage() {
@@ -36,13 +39,25 @@ export default function VitalsPage() {
   const deleteMutation = useApiDelete("vitals", "/vitals", "Vital Record");
 
   const [search, setSearch] = useState("");
+  const [filterSenior, setFilterSenior] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVital, setEditingVital] = useState<Partial<VitalRecord> | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
+  const getSeniorName = (id: string) => {
+    const p = seniors.find(p => String(p.user_id) === String(id) || String(p.id) === String(id));
+    return p?.full_name || `Senior #${id}`;
+  };
+
+  const getRecorderName = (id: string) => {
+    return users.find(u => String(u.id) === String(id))?.name || "—";
+  };
+
   const filtered = vitals.filter(v => {
-    const pName = seniors.find(p => String(p.user_id) === String(v.patient_id))?.full_name || "";
-    return pName.toLowerCase().includes(search.toLowerCase());
+    const pName = getSeniorName(v.patient_id);
+    const matchesSearch = pName.toLowerCase().includes(search.toLowerCase());
+    const matchesSenior = filterSenior === "all" || String(v.patient_id) === filterSenior;
+    return matchesSearch && matchesSenior;
   });
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
@@ -68,8 +83,6 @@ export default function VitalsPage() {
     setEditingVital(prev => prev ? { ...prev, [field]: value } : prev);
   };
 
-  const getSeniorName = (id: string) => seniors.find(p => String(p.user_id) === String(id))?.full_name || `Senior #${id}`;
-
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
@@ -86,6 +99,13 @@ export default function VitalsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by senior..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
         </div>
+        <Select value={filterSenior} onValueChange={v => { setFilterSenior(v); setPage(1); }}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Seniors" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Seniors</SelectItem>
+            {seniors.map(s => <SelectItem key={s.id} value={String(s.user_id)}>{s.full_name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="bg-card rounded-xl card-shadow border border-border/50 overflow-hidden">
@@ -93,24 +113,38 @@ export default function VitalsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50 bg-secondary/30">
-                {["Senior", "Temperature", "Heart Rate", "BP", "Sugar Level", "Recorded At", "Actions"].map(h => (
+                {["Senior", "Care Manager", "Temp", "Heart Rate", "BP", "Sugar Level", "SpO2", "Recorded At", "Actions"].map(h => (
                   <th key={h} className={`text-xs font-medium text-muted-foreground p-3 ${h === "Actions" ? "text-right" : "text-left"}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {paged.length === 0 ? (
-                <tr><td colSpan={7}><EmptyState title="No vitals recorded" /></td></tr>
+                <tr><td colSpan={9}><EmptyState title="No vitals recorded" /></td></tr>
               ) : paged.map(v => (
                 <tr key={v.id} className="border-b border-border/50 last:border-0 hover:bg-secondary/20 transition-colors">
                   <td className="p-3 text-sm font-medium text-foreground">{getSeniorName(v.patient_id)}</td>
-                  <td className="p-3 text-sm">{v.temperature || "—"}</td>
-                  <td className="p-3 text-sm">{v.heart_rate || "—"}</td>
-                  <td className="p-3 text-sm">{v.bp || "—"}</td>
-                  <td className="p-3 text-sm">{v.sugar_level || "—"}</td>
+                  <td className="p-3 text-sm text-muted-foreground">{getRecorderName(v.recorded_by)}</td>
+                  <td className="p-3 text-sm">{v.temperature ? `${v.temperature} °C` : "—"}</td>
+                  <td className="p-3 text-sm">{v.heart_rate ? `${v.heart_rate} bpm` : "—"}</td>
+                  <td className="p-3 text-sm">{v.bp ? `${v.bp} mmHg` : "—"}</td>
+                  <td className="p-3 text-sm">{v.sugar_level ? `${v.sugar_level} mg/dL` : "—"}</td>
+                  <td className="p-3 text-sm">{v.spo2 ? `${v.spo2} %` : "—"}</td>
                   <td className="p-3 text-sm">{formatDate(v.recorded_at || v.created_at)}</td>
                   <td className="p-3">
                     <div className="flex items-center justify-end gap-1">
+                      {v.care_visits_id && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" asChild>
+                              <Link to="/visits">
+                                <Calendar className="h-3.5 w-3.5" />
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View Visit</TooltipContent>
+                        </Tooltip>
+                      )}
                       {hasEdit && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(v)}><Pencil className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Edit</TooltipContent></Tooltip>}
                       {hasEdit && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(v.id)}><Trash2 className="h-3.5 w-3.5" /></Button></TooltipTrigger><TooltipContent>Delete</TooltipContent></Tooltip>}
                     </div>
@@ -173,6 +207,10 @@ export default function VitalsPage() {
             <div className="space-y-2">
               <Label>Sugar Level</Label>
               <Input value={editingVital?.sugar_level || ""} onChange={e => updateField("sugar_level", e.target.value)} placeholder="e.g. 98.5" />
+            </div>
+            <div className="space-y-2">
+              <Label>SpO2</Label>
+              <Input value={editingVital?.spo2 || ""} onChange={e => updateField("spo2", e.target.value)} placeholder="e.g. 98" />
             </div>
             <div className="space-y-2">
               <Label>Recorded At</Label>

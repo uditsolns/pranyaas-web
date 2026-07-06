@@ -4,7 +4,7 @@ import { ExportButton } from "@/components/ExportButton";
 import { Vendor } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, Eye, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -12,12 +12,27 @@ import { TablePagination } from "@/components/TablePagination";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { useApiList, useApiCreate, useApiUpdate, useApiDelete } from "@/hooks/useApi";
+import { api, getStorageUrl } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/context/AuthContext";
 import { canEdit } from "@/lib/permissions";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
 
 const emptyVendor: Partial<Vendor> = {
   vendor_name: "", mobile: "", email: "", address: "", company_name: "",
@@ -43,6 +58,8 @@ export default function VendorsPage() {
   const [viewingItem, setViewingItem] = useState<Vendor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [rateCardFile, setRateCardFile] = useState<File | null>(null);
+  const qc = useQueryClient();
 
   const filtered = vendors.filter(v =>
     (v.vendor_name || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -51,8 +68,8 @@ export default function VendorsPage() {
   );
   const { page, setPage, totalPages, paged, total, from, to } = usePagination(filtered);
 
-  const openCreate = () => { setEditingItem({ ...emptyVendor }); setErrors({}); setDialogOpen(true); };
-  const openEdit = (v: Vendor) => { setEditingItem({ ...v }); setErrors({}); setDialogOpen(true); };
+  const openCreate = () => { setEditingItem({ ...emptyVendor }); setErrors({}); setRateCardFile(null); setDialogOpen(true); };
+  const openEdit = (v: Vendor) => { setEditingItem({ ...v }); setErrors({}); setRateCardFile(null); setDialogOpen(true); };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -85,29 +102,41 @@ export default function VendorsPage() {
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
     
     // Deconstruct and clean up the object for the API payload
-    const { id, created_at, updated_at, ...vData } = editingItem as any;
+    const { id, created_at, updated_at, rate_card, ...vData } = editingItem as any;
     
-    // Ensure numeric fields are cast correctly or nullified if empty
-    const sanitizedVendor = {
-      ...vData,
-      avg_response_time: editingItem.avg_response_time ? parseInt(String(editingItem.avg_response_time)) : 0,
-      availability_24_7: editingItem.availability_24_7 ? parseInt(String(editingItem.availability_24_7)) : 0,
-      oxygen_support: editingItem.oxygen_support ? parseInt(String(editingItem.oxygen_support)) : 0,
-      ventilator_available: editingItem.ventilator_available ? parseInt(String(editingItem.ventilator_available)) : 0,
-    };
+    const formData = new FormData();
+    Object.entries(vData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
 
-    if (id) {
-      updateMutation.mutate({ id, data: sanitizedVendor }, { 
-        onSuccess: () => { setDialogOpen(false); toast.success("Vendor updated successfully"); } 
-      });
-    } else {
-      createMutation.mutate(sanitizedVendor, { 
-        onSuccess: () => { setDialogOpen(false); toast.success("Vendor added successfully"); } 
-      });
+    formData.append("avg_response_time", editingItem?.avg_response_time ? String(parseInt(String(editingItem.avg_response_time))) : "0");
+    formData.append("availability_24_7", editingItem?.availability_24_7 ? String(parseInt(String(editingItem.availability_24_7))) : "0");
+    formData.append("oxygen_support", editingItem?.oxygen_support ? String(parseInt(String(editingItem.oxygen_support))) : "0");
+    formData.append("ventilator_available", editingItem?.ventilator_available ? String(parseInt(String(editingItem.ventilator_available))) : "0");
+
+    if (rateCardFile) {
+      formData.append("rate_card", rateCardFile);
+    }
+
+    try {
+      if (id) {
+        formData.append("_method", "PUT");
+        await api.postFormData(`/vendors/${id}`, formData);
+        toast.success("Vendor updated successfully");
+      } else {
+        await api.postFormData("/vendors", formData);
+        toast.success("Vendor added successfully");
+      }
+      qc.invalidateQueries({ queryKey: ["vendors"] });
+      setDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save vendor");
     }
   };
 
@@ -152,7 +181,7 @@ export default function VendorsPage() {
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Company</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Type</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Mobile</th>
-                <th className="text-left text-xs font-medium text-muted-foreground p-4">Coverage</th>
+                <th className="text-left text-xs font-medium text-muted-foreground p-4">City</th>
                 <th className="text-left text-xs font-medium text-muted-foreground p-4">Agreement</th>
                 <th className="text-right text-xs font-medium text-muted-foreground p-4">Actions</th>
               </tr>
@@ -194,15 +223,46 @@ export default function VendorsPage() {
                 <div><p className="text-xs text-muted-foreground">Type</p><p className="text-sm font-medium">{viewingItem.type}</p></div>
                 <div><p className="text-xs text-muted-foreground">Mobile</p><p className="text-sm font-medium">{viewingItem.mobile}</p></div>
                 <div><p className="text-xs text-muted-foreground">Email</p><p className="text-sm font-medium">{viewingItem.email || "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Address</p><p className="text-sm font-medium">{viewingItem.address || "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Location</p><p className="text-sm font-medium">{viewingItem.latitude && viewingItem.longitude ? `${viewingItem.latitude}, ${viewingItem.longitude}` : "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Coverage</p><p className="text-sm font-medium">{viewingItem.coverage_area || "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Avg Response</p><p className="text-sm font-medium">{viewingItem.avg_response_time || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">City</p><p className="text-sm font-medium">{viewingItem.coverage_area || "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Average Response in minutes</p><p className="text-sm font-medium">{viewingItem.avg_response_time || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">24/7</p><p className="text-sm font-medium">{viewingItem.availability_24_7 || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">O₂ Support</p><p className="text-sm font-medium">{viewingItem.oxygen_support || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Ventilator</p><p className="text-sm font-medium">{viewingItem.ventilator_available || "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Agreement</p><StatusBadge status={viewingItem.agreement_status || "—"} /></div>
               </div>
+              
+              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border/50">
+                <div><p className="text-xs text-muted-foreground">Address</p><p className="text-sm font-medium">{viewingItem.address || "—"}</p></div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Location</p>
+                  <div className="text-sm font-medium">
+                    {viewingItem.latitude && viewingItem.longitude ? `${viewingItem.latitude}, ${viewingItem.longitude}` : "—"}
+                  </div>
+                </div>
+              </div>
+              
+              {viewingItem.latitude && viewingItem.longitude && !isNaN(Number(viewingItem.latitude)) && !isNaN(Number(viewingItem.longitude)) && (
+                <div className="mt-4">
+                  <div className="rounded-md overflow-hidden border border-border/50 h-[250px] relative z-0">
+                    <MapContainer 
+                      center={[Number(viewingItem.latitude), Number(viewingItem.longitude)]} 
+                      zoom={15} 
+                      scrollWheelZoom={false}
+                      style={{ height: "100%", width: "100%" }}
+                      attributionControl={false}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker position={[Number(viewingItem.latitude), Number(viewingItem.longitude)]}>
+                        <Popup>{viewingItem.vendor_name}</Popup>
+                      </Marker>
+                    </MapContainer>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>Close</Button>
                 {hasEdit && <Button onClick={() => { setDetailOpen(false); openEdit(viewingItem); }}>Edit</Button>}
@@ -325,11 +385,11 @@ export default function VendorsPage() {
               <Input value={editingItem?.coverage_area || ""} onChange={e => updateField("coverage_area", e.target.value)} placeholder="e.g. Mumbai South" />
             </div>
             <div className="space-y-2">
-              <Label>Avg Response Time</Label>
+              <Label>Avg Response Time (In Minutes)</Label>
               <Input type="number" min="0" value={editingItem?.avg_response_time || ""} onChange={e => updateField("avg_response_time", e.target.value)} placeholder="e.g. 15" />
             </div>
             <div className="space-y-2">
-              <Label>24/7 Availability</Label>
+              <Label>24/7 Availability Oxygen Support</Label>
               <Input type="number" min="0" value={editingItem?.availability_24_7 || ""} onChange={e => updateField("availability_24_7", e.target.value)} placeholder="e.g. 24" />
             </div>
             <div className="space-y-2">
@@ -342,17 +402,31 @@ export default function VendorsPage() {
             </div>
             <div className="space-y-2">
               <Label>Rate Card</Label>
-              <Input value={editingItem?.rate_card || ""} onChange={e => updateField("rate_card", e.target.value)} placeholder="Rate details" />
+              {editingItem?.rate_card && typeof editingItem.rate_card === "string" && (
+                <div className="mb-2">
+                  <a href={getStorageUrl(editingItem.rate_card) || ""} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">
+                    View Current Rate Card
+                  </a>
+                </div>
+              )}
+              <Input 
+                type="file" 
+                accept="image/jpeg,image/png,image/jpg" 
+                onChange={e => {
+                  if (e.target.files && e.target.files[0]) {
+                    setRateCardFile(e.target.files[0]);
+                  }
+                }} 
+              />
+              <p className="text-[10px] text-muted-foreground">Upload JPG, JPEG, or PNG image.</p>
             </div>
             <div className="space-y-2">
               <Label>Agreement Status</Label>
               <Select value={editingItem?.agreement_status || ""} onValueChange={v => updateField("agreement_status", v)}>
                 <SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                  <SelectItem value="terminated">Terminated</SelectItem>
+                  <SelectItem value="Yes">Yes</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
             </div>
