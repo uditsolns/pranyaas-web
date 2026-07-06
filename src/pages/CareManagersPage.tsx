@@ -377,7 +377,7 @@ export default function CareManagersPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Assigned Zone</Label>
+              <Label>Assigned Zone(City)</Label>
               <Input value={editingCM?.assigned_zone || ""} onChange={e => updateField("assigned_zone", e.target.value)} placeholder="e.g. South Zone" />
             </div>
             <div className="space-y-2">

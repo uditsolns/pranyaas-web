@@ -75,6 +75,7 @@ const emptySenior: SeniorForm = {
   aadhaar_no: "",
   pan_no: "",
   primary_language: "Hindi",
+  living_situation: "",
   secondary_diagnosis: "",
   allergies: "",
   current_medications: "",
@@ -788,6 +789,15 @@ export default function SeniorsPage() {
                 value={editingSenior?.primary_language || ""}
                 onChange={(e) =>
                   updateField("primary_language", e.target.value)
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Living Situation</Label>
+              <Input
+                value={editingSenior?.living_situation || ""}
+                onChange={(e) =>
+                  updateField("living_situation", e.target.value)
                 }
               />
             </div>
