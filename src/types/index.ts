@@ -457,6 +457,18 @@ export interface MonthlyReport {
   updated_at: string;
 }
 
+export interface PlanUpgrade {
+  id: number;
+  patient_id: string | number;
+  current_plan_id: string | number;
+  requested_plan_id: string | number;
+  description?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+
 export interface AuditLog {
   id: number;
   user_id: string;

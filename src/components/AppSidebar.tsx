@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Heart, UserCog, Building2, ClipboardList,
   Calendar, Activity, AlertTriangle, BarChart3, Settings, LogOut, CalendarDays, Quote, Pill,
-  FileText, Package, Stethoscope
+  FileText, Package, Stethoscope, TrendingUp
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +31,7 @@ const navItems = [
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Plans", url: "/plans", icon: Package },
   { title: "Book Services", url: "/book-services", icon: Stethoscope },
+  { title: "Plan Upgrades", url: "/plan-upgrades", icon: TrendingUp },
 ];
 
 export function AppSidebar() {

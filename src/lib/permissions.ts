@@ -5,7 +5,7 @@ export type AccessLevel = "full" | "view" | "none";
 
 export type AppModule =
   | "dashboard" | "seniors" | "relatives" | "care-managers" | "vendors"
-  | "tasks" | "visits" | "vitals" | "emergencies" | "reports" | "settings" | "events" | "quotes" | "medications" | "plan-service-requests" | "plans" | "book-services";
+  | "tasks" | "visits" | "vitals" | "emergencies" | "reports" | "settings" | "events" | "quotes" | "medications" | "plan-service-requests" | "plans" | "book-services" | "plan-upgrades";
 
 export type AppRole = "ADMIN" | "CARE_MANAGER" | "SENIOR" | "SENIOR_FAMILY";
 
@@ -28,6 +28,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     "plan-service-requests": "full",
     plans: "full",
     "book-services": "full",
+    "plan-upgrades": "full",
   },
   CARE_MANAGER: {
     dashboard: "view",
@@ -47,6 +48,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     "plan-service-requests": "full",
     plans: "view",
     "book-services": "full",
+    "plan-upgrades": "full",
   },
   SENIOR: {
     dashboard: "view",
@@ -66,6 +68,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     "plan-service-requests": "full",
     plans: "view",
     "book-services": "view",
+    "plan-upgrades": "view",
   },
   SENIOR_FAMILY: {
     dashboard: "view",
@@ -85,6 +88,7 @@ const permissionsMatrix: Record<AppRole, Record<AppModule, AccessLevel>> = {
     "plan-service-requests": "view",
     plans: "view",
     "book-services": "view",
+    "plan-upgrades": "view",
   },
 };
 
@@ -120,6 +124,7 @@ const urlToModule: Record<string, AppModule> = {
   "/plan-service-requests": "plan-service-requests",
   "/plans": "plans",
   "/book-services": "book-services",
+  "/plan-upgrades": "plan-upgrades",
 };
 
 export function getModuleForUrl(url: string): AppModule | undefined {

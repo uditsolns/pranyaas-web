@@ -945,7 +945,7 @@ export default function SeniorsPage() {
             </div>
             <div className="space-y-2">
               <Label className={errors.weight ? "text-destructive" : ""}>
-                Weight
+                Weight (Kg)
               </Label>
               <Input
                 value={editingSenior?.weight || ""}
@@ -964,7 +964,7 @@ export default function SeniorsPage() {
             </div>
             <div className="space-y-2">
               <Label className={errors.height ? "text-destructive" : ""}>
-                Height
+                Height (Cm)
               </Label>
               <Input
                 value={editingSenior?.height || ""}
