@@ -1006,7 +1006,7 @@ export default function SeniorsPage() {
             <div className="space-y-2">
               <Label>Care Manager</Label>
               <Select
-                value={editingSenior?.care_manager_id || ""}
+                value={editingSenior?.care_manager_id ? String(editingSenior.care_manager_id) : ""}
                 onValueChange={(v) => updateField("care_manager_id", v)}
               >
                 <SelectTrigger>

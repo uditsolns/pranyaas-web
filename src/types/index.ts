@@ -169,6 +169,7 @@ export interface CareManager {
   user?: ApiUser;
   patients?: any[];
   patient_id?: any;
+  patient_ids?: any;
 }
 
 export interface Family {

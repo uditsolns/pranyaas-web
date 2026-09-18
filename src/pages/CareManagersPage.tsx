@@ -70,7 +70,7 @@ export default function CareManagersPage() {
       ...cm,
       phone: cm.user?.phone || "",
       email: cm.user?.email || "",
-      patient_id: Array.isArray(cm.patient_id) ? cm.patient_id : (cm.patient_id ? [cm.patient_id] : [])
+      patient_id: Array.isArray(cm.patients) ? cm.patients.map(p => p.id) : (Array.isArray(cm.patient_ids) ? cm.patient_ids : (Array.isArray(cm.patient_id) ? cm.patient_id : ((cm.patient_ids || cm.patient_id) ? [cm.patient_ids || cm.patient_id] : [])))
     });
     setErrors({});
     setDialogOpen(true);
@@ -119,11 +119,16 @@ export default function CareManagersPage() {
     if (!validateForm()) return;
     
     // Deconstruct and clean up the object for the API payload
-    const { id, user, created_at, updated_at, password, ...cmData } = editingCM as any;
+    const { id, user, created_at, updated_at, password, patient_id, ...cmData } = editingCM as any;
     
+    const patient_ids = Array.isArray(patient_id) 
+      ? patient_id.map(p => typeof p === 'object' && p.patient_id ? Number(p.patient_id) : Number(p))
+      : [];
+
     // Ensure numeric fields are cast correctly
     const sanitizedCM = {
       ...cmData,
+      patient_ids,
       years_of_experience: editingCM.years_of_experience ? parseInt(String(editingCM.years_of_experience)) : 0
     };
 
@@ -213,7 +218,7 @@ export default function CareManagersPage() {
                     className="text-sm font-medium text-primary cursor-pointer hover:underline" 
                     onClick={() => { setViewingPatientsCM(cm); setPatientsModalOpen(true); }}
                   >
-                    {Array.isArray(cm.patient_id) ? cm.patient_id.length : (cm.patient_id ? 1 : 0)}
+                    {Array.isArray(cm.patients) ? cm.patients.length : (Array.isArray(cm.patient_ids) ? cm.patient_ids.length : (Array.isArray(cm.patient_id) ? cm.patient_id.length : (cm.patient_ids || cm.patient_id ? 1 : 0)))}
                   </p>
                 </div>
               </div>
@@ -382,18 +387,24 @@ export default function CareManagersPage() {
               <Label>Assigned Seniors</Label>
               {editingCM?.patient_id && Array.isArray(editingCM.patient_id) && editingCM.patient_id.length > 0 && (
                 <div className="flex flex-col gap-2 mb-2">
-                  {editingCM.patient_id.map((p: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between bg-secondary/30 px-3 py-2 rounded-md">
-                      <span className="text-sm font-medium">{p.patient_name || p.senior_name || `Senior #${p.patient_id}`}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
-                        const newPatients = [...(editingCM.patient_id || [])];
-                        newPatients.splice(idx, 1);
-                        updateField("patient_id", newPatients);
-                      }}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                  {editingCM.patient_id.map((p: any, idx: number) => {
+                    const pId = typeof p === 'object' ? (p.patient_id || p.id) : p;
+                    const senior = seniors.find((s: any) => String(s.id) === String(pId));
+                    const name = typeof p === 'object' && p.patient_name ? p.patient_name : (senior ? senior.full_name : `Senior #${pId}`);
+                    
+                    return (
+                      <div key={idx} className="flex items-center justify-between bg-secondary/30 px-3 py-2 rounded-md">
+                        <span className="text-sm font-medium">{name}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => {
+                          const newPatients = [...(editingCM.patient_id || [])];
+                          newPatients.splice(idx, 1);
+                          updateField("patient_id", newPatients);
+                        }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <Select 
@@ -402,13 +413,8 @@ export default function CareManagersPage() {
                   const p = seniors.find((senior: any) => String(senior.id) === String(v));
                   if (p) {
                     const currentPatients = Array.isArray(editingCM?.patient_id) ? editingCM.patient_id : [];
-                    if (!currentPatients.some((cp: any) => String(cp.patient_id) === String(p.id))) {
-                      const newPatient = {
-                        user_id: String(p.user_id),
-                        patient_id: String(p.id),
-                        patient_name: p.full_name
-                      };
-                      updateField("patient_id", [...currentPatients, newPatient]);
+                    if (!currentPatients.some((cp: any) => String(typeof cp === 'object' ? cp.patient_id : cp) === String(p.id))) {
+                      updateField("patient_id", [...currentPatients, p.id]);
                     }
                   }
                 }}
@@ -417,7 +423,7 @@ export default function CareManagersPage() {
                   <SelectValue placeholder="Assign Senior..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {seniors.filter((p: any) => !(Array.isArray(editingCM?.patient_id) ? editingCM.patient_id : []).some((cp: any) => String(cp.patient_id) === String(p.id))).map((p: any) => (
+                  {seniors.filter((p: any) => !(Array.isArray(editingCM?.patient_id) ? editingCM.patient_id : []).some((cp: any) => String(typeof cp === 'object' ? cp.patient_id : cp) === String(p.id))).map((p: any) => (
                     <SelectItem key={p.id} value={String(p.id)}>{p.full_name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -459,7 +465,7 @@ export default function CareManagersPage() {
             </div>
             <div className="space-y-2">
               <Label>Supervisor (Admin)</Label>
-              <Select value={editingCM?.supervisor_id || ""} onValueChange={v => updateField("supervisor_id", v)}>
+              <Select value={editingCM?.supervisor_id ? String(editingCM.supervisor_id) : ""} onValueChange={v => updateField("supervisor_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Select supervisor..." /></SelectTrigger>
                 <SelectContent>
                   {adminUsers.map(u => <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>)}
@@ -499,17 +505,25 @@ export default function CareManagersPage() {
                 </thead>
                 <tbody className="divide-y">
                   {seniors.map((p: any) => {
-                    const isAssignedToThis = viewingPatientsCM && Array.isArray(viewingPatientsCM.patient_id) 
-                      ? viewingPatientsCM.patient_id.some((cp: any) => String(cp.patient_id) === String(p.id)) 
-                      : (viewingPatientsCM && viewingPatientsCM.patient_id && String(viewingPatientsCM.patient_id) === String(p.id));
+                    const checkIsAssigned = (cm: any) => {
+                      if (!cm) return false;
+                      const pIds = cm.patients || cm.patient_ids || cm.patient_id;
+                      if (!pIds) return false;
+                      if (Array.isArray(pIds)) {
+                        return pIds.some((cp: any) => String(typeof cp === 'object' ? (cp.patient_id || cp.id) : cp) === String(p.id));
+                      }
+                      return String(pIds) === String(p.id);
+                    };
+                    
+                    const isAssignedToThis = checkIsAssigned(viewingPatientsCM);
                     
                     let assignedCMName = "Not Assigned";
                     if (isAssignedToThis) {
-                      assignedCMName = viewingPatientsCM.name;
+                      assignedCMName = viewingPatientsCM?.name || "Assigned";
                     } else if (p.care_manager) {
                       assignedCMName = p.care_manager.name || "Assigned";
                     } else {
-                       const assignedCM = cms.find(c => Array.isArray(c.patient_id) ? c.patient_id.some((cp: any) => String(cp.patient_id) === String(p.id)) : false);
+                       const assignedCM = cms.find(c => checkIsAssigned(c));
                        if (assignedCM) assignedCMName = assignedCM.name;
                     }
 
@@ -546,10 +560,12 @@ export default function CareManagersPage() {
                                 };
                                 const updatedPatients = [...currentPatients, newPatient];
                                 
-                                const { id, user, created_at, updated_at, password, ...cmData } = viewingPatientsCM as any;
+                                const { id, user, created_at, updated_at, password, patient_id, ...cmData } = viewingPatientsCM as any;
+                                const patient_ids = updatedPatients.map(up => Number(up.patient_id));
+
                                 const payload = {
                                   ...cmData,
-                                  patient_id: updatedPatients,
+                                  patient_ids,
                                   years_of_experience: viewingPatientsCM.years_of_experience ? parseInt(String(viewingPatientsCM.years_of_experience)) : 0
                                 };
                                 
